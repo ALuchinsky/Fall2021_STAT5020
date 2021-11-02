@@ -14,14 +14,14 @@ rm(list=ls())
 library(car)
 library(StepReg)
 library(mice)
-source("../scripts/print_missing.R")
+source("scripts/print_missing.R")
 ```
 
 
 # Lading and cleaning the data
 
 ```{r}
-Dat <- read.csv("../data/Life Expectancy Data.csv")
+Dat <- read.csv("../data/external/Life Expectancy Data.csv")
 df <- data.frame(Dat)
 make_info <- function(Dat, order_by = "missing", decreasing = TRUE) {
   info <- data.frame(
@@ -81,7 +81,7 @@ print_missing(Dat3)
 Using asmple method, looking for insertion with best R2
 
 ```{r}
-file_name = "../data/impData.rds";
+file_name = "../data/processed/impData.rds";
 if(! file.exists(file_name)) {
   system.time({
     tmp <- capture.output(impData <- mice(Dat3, method = "sample", m=500, seed = 456))
@@ -97,6 +97,8 @@ impData <- readRDS(file_name)[[1]]
 r2_list <- readRDS(file_name)[[2]]
 hist(r2_list, main = paste( "R2max = ", round(max(r2_list),3), "at", which.max(r2_list)))
 ```
+
+
 
 The best R2 is slightly less then for original data:
 
@@ -221,7 +223,7 @@ vif(model_sw)
 ```
 
 
-You see now that the modle seems to be satisfactory: no ingnificant variables, no multicollinearity problem. It is time now to test it
+You see now that the modle seems to be satisfactory: no insignificant variables, no multicollinearity problem. It is time now to test it
 
 # Testing model
 
