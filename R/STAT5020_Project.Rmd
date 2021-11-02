@@ -1,0 +1,344 @@
+---
+title: "STAT5020, Project"
+author: "Alexey Luchinsky"
+date: "10/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE, input = FALSE}
+rm(list=ls())
+library(car)
+library(StepReg)
+library(mice)
+source("../scripts/print_missing.R")
+```
+
+
+# Lading and cleaning the data
+
+```{r}
+Dat <- read.csv("../data/Life Expectancy Data.csv")
+df <- data.frame(Dat)
+make_info <- function(Dat, order_by = "missing", decreasing = TRUE) {
+  info <- data.frame(
+    n=1:ncol(Dat), 
+    name = colnames(Dat), 
+    type = sapply(1:ncol(Dat), function(i) typeof(Dat[,i])),
+    unique = sapply(1:ncol(Dat), function(i) length(unique(Dat[,i]))),
+    missing = sapply(1:ncol(Dat), function(i) sum(is.na(Dat[,i])))
+  )
+  info <- info[ order(info[,order_by], decreasing = decreasing),]
+  info
+}
+list_fields <- function(Dat) {
+  make_info(Dat, order_by = "n", decreasing = FALSE)
+}
+list_missing <- function(Dat) {
+  make_info(Dat, order_by = "missing", decreasing = TRUE)
+}
+list_fields(Dat)
+```
+
+Let me first get rid of the string columns
+
+```{r}
+Dat2 <- Dat[-c(1,3)] # dropping country
+Dat2$developed = ifelse(Dat$Status == "Developed", 1, 0) # factoring status
+list_fields(Dat2)
+```
+
+Looking for missing values
+
+```{r}
+print_missing(Dat2)
+```
+
+I will drop all the rows with missing the fields with low number of missing rows:
+
+```{r}
+Dat3 <- Dat2
+n <- 0
+repeat {
+  n <- n + 1
+  low_mis <- list_missing(Dat3) %>% filter(missing < 30 & missing > 0)
+  if(nrow(low_mis)>0 && n < 10) {
+    i <- low_mis$n[1]
+    Dat3 <- Dat3[!is.na(Dat3[,i]),]
+  } else {
+    break
+  }
+}
+list(n_removed = nrow(Dat2) - nrow(Dat3))
+print_missing(Dat3)
+```
+
+7 vars are remaining, I can try to impute with the `mice` package
+
+Using asmple method, looking for insertion with best R2
+
+```{r}
+file_name = "../data/impData.rds";
+if(! file.exists(file_name)) {
+  system.time({
+    tmp <- capture.output(impData <- mice(Dat3, method = "sample", m=500, seed = 456))
+  })
+  r2_list <- sapply(1:impData$m, function(i) {
+    dat <- complete(impData, i)
+    mod <- lm(Life.expectancy ~ ., data = dat[,-1])
+    summary(mod)$r.squared
+  })
+  saveRDS(list(impData, r2_list),  file_name)
+}
+impData <- readRDS(file_name)[[1]]
+r2_list <- readRDS(file_name)[[2]]
+hist(r2_list, main = paste( "R2max = ", round(max(r2_list),3), "at", which.max(r2_list)))
+```
+
+The best R2 is slightly less then for original data:
+
+```{r}
+model <- lm(Life.expectancy ~ ., data = Dat2)
+summary(model)$r.squared
+```
+
+but I will work with it
+
+```{r}
+Dat_imputed <- complete(impData, which.max(r2_list))
+```
+
+
+# Solving Multicollinearity
+
+
+
+```{r}
+vif_info <- function(dat, yVar = Life.expectancy) {
+  mod <- lm(Life.expectancy ~., data = dat)
+  vif_dat <- head( sort(vif(mod), decreasing = TRUE), 3)
+  vif_max_name <- names(vif_dat)[1]
+  cor_max <- sort( cor(dat)[which(colnames(dat) == vif_max_name),], decreasing = TRUE )[2:4]
+  sorted_p <- sort(summary( mod)$coefficients[ c(vif_max_name, names(cor_max)), 4], decreasing = TRUE)
+  list(
+    vif_dat = vif_dat,
+    cor_max = cor_max,
+    sorted_p = sorted_p
+  )
+}
+```
+
+```{r}
+Dat_vif <- Dat_imputed
+model_vif <- lm(Life.expectancy ~ ., data = Dat_vif)
+summary(model_vif)$r.squared
+```
+
+
+```{r}
+vif_info(Dat_vif)
+```
+
+We see that the most problematic var is `infant.deaths`. It is strongly correlated with `under.five.deaths`, so we can remove one
+
+```{r}
+Dat_vif <- Dat_vif[, -which(colnames(Dat_vif)=="under.five.deaths")]
+model_vif <- lm(Life.expectancy ~ ., data = Dat_vif)
+summary(model_vif)$r.squared
+```
+
+
+```{r}
+vif_info(Dat_vif)
+```
+
+The next problemmatic is thinness.5.9.years. It is strongly correlated with thinness.5.9.years and thinness.5.9.years is more significant, so we will remove thinness.5.9.years
+
+```{r}
+Dat_vif <- Dat_vif[, -which(colnames(Dat_vif)=="thinness.5.9.years")]
+model_vif <- lm(Life.expectancy ~ ., data = Dat_vif)
+summary(model_vif)$r.squared
+```
+
+After this step the multicollinearity issue is solved
+
+```{r}
+vif_info(Dat_vif)
+```
+
+```{r}
+summary(model_vif)
+```
+
+
+## SetWise
+
+```{r}
+swF <- stepwise(Dat_vif, y="Life.expectancy", selection = "forward")
+swF$variate
+swF
+```
+
+```{r}
+swB <- stepwise(Dat_vif, y="Life.expectancy", selection = "backward")
+swB$variate
+```
+
+```{r}
+swBD <- stepwise(Dat_vif, y="Life.expectancy", selection = "bidirection")
+swBD$variate
+```
+
+```{r}
+all.equal( sort(swF$variate), sort(swBD$variate))
+```
+
+Both `forward` and `bidirection` methods give the same result, `backward` fails
+
+```{r}
+ncol(Dat_vif) - length(swF$variate)
+```
+
+6 variables should be removed:
+
+```{r}
+to_remove <- which( !(colnames(Dat_vif) %in% swF$variate))
+to_remove <- to_remove[-2]
+colnames(Dat_vif)[to_remove]
+```
+
+```{r}
+Dat_sw = Dat_vif[,-to_remove]
+model_sw = lm(Life.expectancy ~ ., data = Dat_sw)
+summary(model_sw)
+```
+
+```{r}
+vif(model_sw)
+```
+
+
+You see now that the modle seems to be satisfactory: no ingnificant variables, no multicollinearity problem. It is time now to test it
+
+# Testing model
+
+```{r}
+Dat_trans <- Dat_sw
+Dat_trans$Adult.Mortality <- (Dat_trans$Adult.Mortality)^1.9
+Dat_trans$Hepatitis.B <- sqrt(1+Dat_trans$Hepatitis.B)
+model_trans <-  lm(Life.expectancy ~ ., data = Dat_trans)
+summary(model_trans)
+```
+
+```{r}
+aov()
+```
+
+
+```{r}
+for(i in 2:ncol(Dat_sw)) {
+  MASS::truehist(Dat_sw[,i], main = paste(i, colnames(Dat_sw)[i]))
+}
+```
+
+
+```{r}
+MASS::truehist( model_sw$residuals)
+```
+
+
+
+
+```{r}
+for(i in 2:ncol(Dat_trans)) {
+  plot(Dat_trans[,i], Dat_trans[,1], main = paste(i, colnames(Dat_trans)[i]))
+}
+```
+
+
+
+
+```{r}
+MASS::truehist(model_sw$residuals)
+```
+
+
+```{r}
+ncol(Dat5) - length(swF$variate)
+```
+
+5 variables shold be removed:
+
+```{r}
+to_remove <- which( !(colnames(Dat5) %in% swF$variate))
+to_remove <- to_remove[-2]
+colnames(Dat5)[to_remove]
+```
+
+
+```{r}
+Dat6 <- Dat5[,-to_remove]
+colnames(Dat6)
+```
+
+```{r}
+model6 <- lm(Life.expectancy ~ ., data = Dat6)
+summary(model6)
+```
+
+We see that all regressors are significant, R2 is reasonable
+
+# Vriable transformations
+
+```{r}
+for(i in 2:ncol(Dat7)) {
+  hist(Dat7[,i], breaks = 500, main = colnames(Dat7)[i])
+}
+```
+
+
+```{r}
+Dat7 <- Dat6
+Dat7[,8] = log(1+Dat7[,8])
+Dat7[,4] = log(1+Dat7[,4])
+Dat7[,9] = log(1+Dat7[,9])
+```
+
+
+
+
+
+
+```{r}
+model7 <- lm(Life.expectancy ~ ., data = Dat7)
+summary(model7)
+```
+
+```{r}
+for(i in 2:ncol(Dat7)) {
+  plot(Dat7[,i], model7$residuals, main=paste(i, colnames(Dat7)[i]))
+  abline(h=0, col="red")
+}
+```
+```{r}
+plot(model7$fitted.values, model7$residuals)
+abline(h=0, col="red")
+```
+
+
+```{r}
+MASS::truehist(model7$residuals, nbins = 50)
+curve( dnorm( x, sd = sd(model7$residuals)), add = TRUE, col = "red")
+```
+
+```{r}
+shapiro.test(model7$residuals)
+```
+
+```{r}
+shapiro.test(rnorm(100))
+```
+
