@@ -1,0 +1,128 @@
+---
+title: "STAT5020, Project"
+author: "Alexey Luchinsky"
+date: "10/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE, input = FALSE}
+rm(list=ls())
+library(car)
+library(StepReg)
+library(mice)
+library(tidyr)
+source("scripts/print_missing.R")
+```
+
+
+# Lading and cleaning the data
+
+```{r}
+Dat <- read.csv("../data/external/Life Expectancy Data.csv")
+print_missing(Dat)
+```
+## Population
+
+Population is the most problematic variable
+
+```{r}
+mis_countries <- unique( Dat[ is.na(Dat$Population), ]$Country )
+mis_pop_num <- sapply(mis_countries, 
+   function(c) miss = filter( Dat, Country == c) %>% pull(Population) %>% is.na %>% sum %>% as.numeric
+)
+data.frame(Country = mis_countries, miss = as.vector(mis_pop_num)) %>% arrange(miss)
+```
+As you can see, there are 49 countries with missing Population field and for most of the countries there is no information for the whole time period. Funny that US is in this list
+
+We can try to get this information from other sources, for example https://api.worldbank.org/v2/en/indicator/SP.POP.TOTL?downloadformat=csv
+
+
+```{r}
+data_population <- 
+  read.csv("../data/external/API_SP.POP.TOTL_DS2_en_csv_v2_3158886/API_SP.POP.TOTL_DS2_en_csv_v2_3158886.csv", skip = 3) %>% 
+  gather(Year, Population, X1960:X2020) %>% select(Country.Name, Year, Population) %>% 
+  transmute(Country = Country.Name, Year = floor(as.numeric(str_sub(Year, 2, 5))), Populaion = Population)
+head(data_population)
+```
+
+
+
+```{r}
+for(missing_country in mis_countries) {
+  years <- Dat %>% filter(Country == missing_country) %>% pull(Year)
+  for(y in years) {
+    xx <- data_population[ data_population$Country == missing_country & data_population$Year == y, ]
+    if(nrow(xx)>0) {
+      Dat[ Dat$Country ==missing_country & Dat$Year == y, ]$Population = xx$Populaion
+    }
+  }
+}
+head( print_missing(Dat))
+```  
+
+Population data for some countries is restored, but not for all. Here is the list of countries that need more attention:
+
+```{r}
+unique( Dat[ is.na(Dat$Population), ]$Country )
+```
+
+The reason is that the same countries are named differently is different data sets. I need to rename them manualy. The WHO convention will be used
+
+```{r}
+country_names  = data.frame()
+country_names <- rbind( country_names, data.frame( WHO = "United States of America", Alt = "United States"))
+country_names <- rbind( country_names, data.frame(WHO = "Bahamas", Alt = "Bahamas, The" ))
+country_names <- rbind( country_names, data.frame(WHO = "Côte d'Ivoire", Alt = "Cote d'Ivoire"))
+country_names <- rbind( country_names, data.frame(WHO = "Democratic People's Republic of Korea" , Alt = "Korea, Dem. People's Rep."))
+country_names <- rbind( country_names, data.frame(WHO = "Bolivia (Plurinational State of)" , Alt = "Bolivia"))
+country_names <- rbind( country_names, data.frame(WHO = "Congo" , Alt = "Congo, Dem. Rep."))
+country_names <- rbind( country_names, data.frame(WHO = "Democratic Republic of the Congo" , Alt = "Congo, Dem. Rep."))
+country_names <- rbind( country_names, data.frame(WHO = "Czechia" , Alt = "Czech Republic"))
+country_names <- rbind( country_names, data.frame(WHO = "Yemen" , Alt = "Yemen, Rep."))
+country_names <- rbind( country_names, data.frame(WHO = "Egypt" , Alt = "Egypt, Arab Rep."))
+country_names <- rbind( country_names, data.frame(WHO = "Gambia" , Alt = "Gambia, The"))
+country_names <- rbind( country_names, data.frame(WHO = "Iran (Islamic Republic of)" , Alt = "Iran, Islamic Rep."))
+country_names <- rbind( country_names, data.frame(WHO = "Lao People's Democratic Republic" , Alt = "Lao PDR"))
+country_names <- rbind( country_names, data.frame(WHO = "Micronesia (Federated States of)" , Alt = "Micronesia, Fed. Sts."))
+country_names <- rbind( country_names, data.frame(WHO = "Republic of Korea" , Alt = "Korea, Rep."))
+country_names <- rbind( country_names, data.frame(WHO = "Republic of Moldova" , Alt = "Moldova"))
+country_names <- rbind( country_names, data.frame(WHO = "Saint Kitts and Nevis" , Alt = "St. Kitts and Nevis"))
+country_names <- rbind( country_names, data.frame(WHO = "Saint Lucia" , Alt = "St. Lucia"))
+country_names <- rbind( country_names, data.frame(WHO = "Saint Vincent and the Grenadines" , Alt = "St. Vincent and the Grenadines"))
+country_names <- rbind( country_names, data.frame(WHO = "Slovakia" , Alt = "Slovak Republic"))
+country_names <- rbind( country_names, data.frame(WHO = "United Kingdom of Great Britain and Northern Ireland" , Alt = "United Kingdom"))
+country_names <- rbind( country_names, data.frame(WHO = "United Republic of Tanzania" , Alt = "Tanzania"))
+country_names <- rbind( country_names, data.frame(WHO = "Venezuela (Bolivarian Republic of)" , Alt = "Venezuela, RB"))
+country_names <- rbind( country_names, data.frame(WHO = "Viet Nam" , Alt = "Vietnam"))
+#country_names
+```
+
+
+```{r}
+problem_countries <- c()
+for(missing_country in mis_countries) {
+  alt_name <- filter(country_names, WHO == missing_country)
+  alt_name = ifelse(nrow(alt_name)>0,  alt_name$Alt, "no")
+  for(y in filter(Dat, Country==missing_country) %>% pull(Year)) {
+    xx <- data_population %>% 
+      filter( Country == missing_country | Country == alt_name) %>% 
+      filter(Year == y)
+    if(nrow(xx)>0) {
+      Dat[ Dat$Country == missing_country & Dat$Year == y,]$Population = xx$Populaion
+    } else {
+      problem_countries <- unique(c(problem_countries, missing_country))
+    }
+  }
+}
+problem_countries
+```
+
+```{r}
+print_missing(Dat)
+```
+
+Now the problen with missing population is almost solved

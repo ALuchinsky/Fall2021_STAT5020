@@ -1,0 +1,4 @@
+*.html
+data/external/API_SP.POP.TOTL_DS2_en_csv_v2_3158886/Metadata_Country_API_SP.POP.TOTL_DS2_en_csv_v2_3158886.csv
+data/external/API_SP.POP.TOTL_DS2_en_csv_v2_3158886/Metadata_Indicator_API_SP.POP.TOTL_DS2_en_csv_v2_3158886.csv
+data/processed/
