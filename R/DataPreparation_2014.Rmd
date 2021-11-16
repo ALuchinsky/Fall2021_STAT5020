@@ -170,12 +170,13 @@ Dat_final <- Dat[complete.cases(Dat), ]
 print_missing(Dat_final)
 ```
 
-```{r}
-Dat_final
-```
 
 
 ```{r}
 write.csv(Dat_final, paste("../data/processed/prepared_data_",year,".csv", sep=""))
 ```
 
+```{r}
+model <- lm(Life.expectancy ~ ., data = Dat_final[,-c(1,2)])
+summary(model)
+```
