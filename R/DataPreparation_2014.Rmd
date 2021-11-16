@@ -21,10 +21,15 @@ Dat <- read.csv("../data/external/Life Expectancy Data.csv")
 str(Dat)
 ```
 
-Only 2014 year is required
+```{r}
+year <- 2014
+```
+
+
+Only this year is required
 
 ```{r}
-Dat <- filter(Dat, Year == 2014)
+Dat <- filter(Dat, Year == year)
 print_missing(Dat )
 ```
 
@@ -39,7 +44,7 @@ data_population <-
   read.csv("../data/external/API_SP.POP.TOTL_DS2_en_csv_v2_3158886/API_SP.POP.TOTL_DS2_en_csv_v2_3158886.csv", skip = 3) %>% 
   gather(Year, Population, X1960:X2020) %>% select(Country.Name, Year, Population) %>% 
   transmute(Country = Country.Name, Year = floor(as.numeric(str_sub(Year, 2, 5))), Population.y = Population) %>% 
-  filter(Year == 2014)
+  filter(Year == year)
 head(data_population)
 ```
 
@@ -116,7 +121,7 @@ GDP info loaded from http://ghdx.healthdata.org/record/ihme-data/gross-domestic-
 
 ```{r}
 GDP <- read.csv("../data/external/IHME_GLOBAL_GDP_ESTIMATES_1950_2015.csv")
-GDP <- filter(GDP, Year == 2014)
+GDP <- filter(GDP, Year == year)
 GDP <- select(GDP, c(Country, IHME.GDP.estimate..2005.international.dollars. ))
 GDP$Country <- trimws(GDP$Country)
 GDP$GDP.y <- GDP$IHME.GDP.estimate..2005.international.dollars. %>% trimws %>% str_replace(",","") %>% as.numeric
@@ -166,6 +171,11 @@ print_missing(Dat_final)
 ```
 
 ```{r}
-write.csv(Dat_final, "../data/processed/prepared_data_2014.csv")
+Dat_final
+```
+
+
+```{r}
+write.csv(Dat_final, paste("../data/processed/prepared_data_",year,".csv", sep=""))
 ```
 
