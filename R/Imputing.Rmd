@@ -19,7 +19,7 @@ source("scripts/print_missing.R")
 ```
 
 
-# Lading and cleaning the data
+# Loading and cleaning the data
 
 ```{r}
 Dat <- read.csv("../data/external/Life Expectancy Data.csv")
@@ -70,7 +70,7 @@ Population data for some countries is restored, but not for all. Here is the lis
 unique( Dat[ is.na(Dat$Population), ]$Country )
 ```
 
-The reason is that the same countries are named differently is different data sets. I need to rename them manualy. The WHO convention will be used
+The reason is that the same countries are named differently is different data sets. I need to rename them manually. The WHO convention will be used
 
 ```{r}
 country_names  = data.frame()
@@ -125,4 +125,129 @@ problem_countries
 print_missing(Dat)
 ```
 
-Now the problen with missing population is almost solved
+Now the problem with missing population is almost solved
+
+## Transformations
+
+It seems that at least 3 variables should be transformed
+
+```{r fig.height=5, fig.width=5}
+par(mfrow = c(3,2))
+i <- 8
+plot(Dat[,i], Dat$Life.expectancy, main = colnames(Dat)[i])
+plot(log(Dat[,i]), Dat$Life.expectancy, main = colnames(Dat)[i])
+#
+#par(mfrow = c(1,2))
+i <- 17
+plot(Dat[,i], Dat$Life.expectancy, main = colnames(Dat)[i])
+plot(log(Dat[,i]), Dat$Life.expectancy, main = colnames(Dat)[i])
+#
+#par(mfrow = c(1,2))
+i <- 18
+plot(Dat[,i], Dat$Life.expectancy, main = colnames(Dat)[i])
+plot(log(Dat[,i])^2, Dat$Life.expectancy, main = colnames(Dat)[i])
+#
+```
+
+New data will be stored in `DatTr`
+
+```{r}
+DatTr <- Dat
+#DatTr$log.percentage.expenditure <- log(DatTr$percentage.expenditure)
+#DatTr <- DatTr[,colnames(DatTr) != "percentage.expenditure"]
+#
+DatTr$log.GDP <- log(DatTr$GDP)
+DatTr <- DatTr[,colnames(DatTr) != "GDP"]
+#
+DatTr$log2.Population <- log(DatTr$Population)
+DatTr <- DatTr[,colnames(DatTr) != "Population"]
+
+```
+
+
+## Hepatitis.B
+
+```{r}
+colnames(DatTr)
+```
+
+
+```{r}
+# ii <- 13: Polio, 0.4861708
+# ii <- 15: Diphtheria, 0.6114949
+ii <- 15
+var <- colnames(DatTr[ii])
+print(var)
+ddd <- DatTr[!is.na(Dat$Hepatitis.B),]
+ddd <- ddd[!is.na(ddd[,var]),]
+cor(ddd$Hepatitis.B, ddd[,var])
+```
+
+```{r}
+DatTr$log.percentage.expenditure
+```
+
+
+```{r}
+which( colnames(Dat) == "Life.expectancy")
+```
+
+```{r}
+model <- lm(Hepatitis.B ~ ., data = Dat[!is.na(Dat$Hepatitis.B),-c(1, 2, 3)])
+summary(model)
+MASS::truehist(model$residuals)
+```
+```{r}
+length(model$fitted.values)
+nrow(Dat)
+```
+
+```{r}
+sum(is.na(
+predict(model, newdata = Dat[is.na(Dat$Hepatitis.B), -c(1, 2, 3)])
+))/nrow(Dat)
+```
+
+
+```{r}
+ddd %>% select(Hepatitis.B, Population)
+```
+
+
+```{r}
+print_missing(ddd)
+```
+
+
+
+## Interactions
+
+https://stats.stackexchange.com/questions/19271/different-ways-to-write-interaction-terms-in-lm
+
+```{r}
+d <- structure(list(r = structure(c(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L,
+     1L, 1L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L), .Label = c("r1","r2"),
+     class = "factor"), s = structure(c(1L, 1L, 1L, 1L, 1L, 
+     2L, 2L, 2L, 2L, 2L, 1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 2L, 2L), 
+    .Label = c("s1","s2"), class = "factor"), rs = structure(c(1L, 1L,
+     1L,1L, 1L,2L, 2L, 2L, 2L, 2L, 3L, 3L, 3L, 3L, 3L, 4L, 4L, 4L, 4L, 4L),
+    .Label = c("r1s1","r1s2", "r2s1", "r2s2"), class = "factor"), 
+     y = c(19.3788027518437, 23.832287726332, 26.2533235300492,
+     15.962906892112, 24.2873740664331, 28.5181676764727, 25.2757801195961,
+     25.3601044326474, 25.3066440027202, 24.3298865128677, 32.5684219007394,
+     31.0048406654209, 31.671238316086, 34.1933764518288, 36.8784821769123,
+     41.6691435168277, 40.4669714825801, 39.2664137501106, 39.4884849591932,
+     49.247505535468)), .Names = c("r","s", "rs", "y"), 
+     row.names = c(NA, -20L), class = "data.frame")
+```
+
+```{r}
+lm0 <- lm(y ~ r*s, data=d)
+lm1 <- lm(y ~ r + s + r*s, data=d)
+```
+
+```{r}
+summary(lm0)
+summary(lm1)
+```
+
