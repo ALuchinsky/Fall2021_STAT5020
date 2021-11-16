@@ -164,3 +164,7 @@ Dat_final <- Dat[complete.cases(Dat), ]
 print_missing(Dat_final)
 ```
 
+```{r}
+write.csv(Dat_final, "../data/processed/prepared_data.csv")
+```
+
