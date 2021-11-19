@@ -97,8 +97,14 @@ merged
 For most of the countries old and new populations agree, but not for all!!!!
 
 ```{r}
-merged %>% select(Country, Population, Population.y) %>% mutate(rat = Population/Population.y)
+merged %>% select(Country, Population, Population.y) %>% mutate(rat = Population/Population.y) -> comp_merged
+comp_merged
 ```
+
+```{r}
+MASS::truehist(comp_merged$rat, nbins = 100)
+```
+
 
 Right now I will simply use the new data (this might be not good for Albania, for example)
 
@@ -140,8 +146,6 @@ merged
 
 Almost no pattern. Will use GDP data set
 
-
-
 ```{r}
 for(c in Dat$Country) {
   new <- merged[ merged$Country == c, ]$GDP.y
@@ -157,7 +161,34 @@ for(c in Dat$Country) {
 print_missing(Dat)
 ```
 
-There are 26 rows with NA's
+
+# Remove columns
+
+Here are the columns with more then half data missing
+
+```{r}
+miss <- sapply(1:ncol(Dat), function(i) sum(is.na(Dat[,i])))
+inds <- which(miss > nrow(Dat)/2)
+colnames(Dat)[inds]
+```
+
+
+Se can safely remove them
+
+```{r}
+if(length(inds)>0) Dat <- Dat[,-inds]
+ncol(Dat)
+```
+
+```{r}
+print_missing(Dat)
+```
+
+
+
+# aaa
+
+There are small number of rows with NA's
 
 ```{r}
 nrow(Dat[!complete.cases(Dat),])
@@ -176,7 +207,11 @@ print_missing(Dat_final)
 write.csv(Dat_final, paste("../data/processed/prepared_data_",year,".csv", sep=""))
 ```
 
+
 ```{r}
+print(year)
 model <- lm(Life.expectancy ~ ., data = Dat_final[,-c(1,2)])
 summary(model)
 ```
+
+

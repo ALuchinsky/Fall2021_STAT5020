@@ -24,7 +24,7 @@ source("scripts/print_missing.R")
 ```{r}
 Dat <- read.csv("../data/external/Life Expectancy Data_2.csv")
 str(Dat)
-#print_missing(Dat)
+print_missing(Dat)
 ```
 
 ## Population

@@ -1,0 +1,233 @@
+---
+title: "Transformation"
+author: "Alexey Luchinsky"
+date: "11/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list = ls())
+library(dplyr)
+```
+
+```{r}
+year <- 2014
+```
+
+```{r}
+Dat <- read.csv(paste("../data/processed/prepared_data_",year,".csv", sep=""))
+str(Dat)
+```
+
+Removing unused components:
+
+```{r}
+sum(!complete.cases(Dat))
+```
+
+
+```{r}
+Dat <- Dat[,-c(1,2,3)]
+str(Dat)
+```
+
+The initial model
+
+```{r}
+sum <- summary(lm(Life.expectancy ~ ., data = Dat))
+r20 <- sum$r.squared
+sum
+```
+
+
+```{r}
+ncol(Dat)
+```
+
+```{r}
+transform <- function(x, scale) {
+  if(scale == 0) return(log(1 + min(x) + x))
+  else return(x^scale)
+}
+```
+
+
+```{r}
+i0 <- 2
+Dat2 <- Dat
+```
+
+
+```{r}
+i <- 4
+s <- 0
+plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])
+Dat2[,i] <- transform(Dat[,i],s)
+colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
+```
+
+```{r}
+i <- 6
+s <- 0
+plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])
+Dat2[,i] <- transform(Dat[,i],s)
+colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
+```
+
+```{r}
+i <- 8
+s <- 0
+plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])
+Dat2[,i] <- transform(Dat[,i],s)
+colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
+```
+
+```{r}
+i <- 10
+s <- 0
+plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])
+Dat2[,i] <- transform(Dat[,i],s)
+colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
+```
+
+```{r}
+i <- 15
+s <- 0
+plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])
+Dat2[,i] <- transform(Dat[,i],s)
+colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
+```
+
+```{r}
+i <- 16
+s <- 0
+plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])
+Dat2[,i] <- transform(Dat[,i],s)
+colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
+```
+
+```{r}
+plot(log(Dat[,16]), Dat[,2], xlab = colnames(Dat)[16], ylab = colnames(Dat)[2])
+```
+
+
+```{r}
+colnames(Dat2)
+```
+
+```{r}
+sum(!complete.cases(Dat2))
+```
+
+```{r}
+model2 <- lm(Life.expectancy ~ ., data = Dat2)
+summary(model2)
+```
+
+```{r}
+library(car)
+vif(model2)
+```
+
+```{r}
+for(i in 1:ncol(Dat2))
+  print(paste(i, colnames(Dat2)[i]))
+```
+
+
+```{r}
+Dat3 <- Dat2[,-c(7, 15, 18, 20)]
+model3 <- lm(Life.expectancy ~ ., data = Dat3)
+summary(model3)
+```
+
+```{r}
+vif(model3)
+```
+
+
+```{r}
+round(cor(Dat3[,-c(1,2)]), 2)
+```
+
+```{r}
+library(StepReg)
+```
+
+```{r}
+str(Dat2)
+```
+
+
+```{r}
+DatSw <- Dat2
+DatSw$Status <- ifelse(Dat$Status == "Developing", 0, 1)
+stepwise(DatSw, "Life.expectancy", selection = "bidirection", select = "adjRsq")
+```
+```{r}
+modelSw <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + Total.expenditure + Status + Diphtheria, data = DatSw)
+summary(modelSw)
+```
+
+```{r}
+MASS::truehist(modelSw$residuals, nbins = 20, main = as.numeric(shapiro.test(modelSw$residuals)))
+curve(dnorm(x, sd=sd(modelSw$residuals)), add=TRUE)
+```
+
+```{r}
+plot(modelSw$fitted.values, scale(modelSw$residuals))
+abline(h=0)
+```
+
+```{r}
+qqnorm(modelSw$residuals)
+qqline(modelSw$residuals)
+```
+
+```{r fig.height=7, fig.width=6}
+par(mfrow = c(3, 3))
+for(i in (1:ncol(Dat2))[-c(1,i0)]) {
+  plot(Dat2[,i], Dat2[,i0], xlab=colnames(Dat2)[i])
+}
+```
+
+
+
+```{r}
+library(EnvStats)
+```
+
+```{r}
+x <- Dat[,20]
+bc <-boxcox(1+min(x) + x, lambda = seq(-3, 3, .01))
+max <- 0.95*max(bc$objective)
+rang <- range(bc$lambda[bc$objective>max])
+plot(bc$lambda, bc$objective, type = "l", lwd = 2, main = bc$lambda[which.max(bc$objective)])
+abline(h=max)
+abline(v=rang, lty = 2)
+abline(v = bc$lambda[which.max(bc$objective)])
+```
+
+```{r}
+model2
+```
+
+
+```{r}
+MASS::boxcox(Life.expectancy ~ ., data = Dat2)
+```
+
+```{r}
+MASS::boxcox(Volume ~ log(Height) + log(Girth), data = trees,
+       lambda = seq(-0.25, 0.25, length = 10))
+```
+
+```{r}
+MASS::boxcox(Days+1 ~ Eth*Sex*Age*Lrn, data = quine,
+       lambda = seq(-0.05, 0.45, len = 20))
+```
+
