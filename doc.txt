@@ -1,0 +1,20 @@
+# intro
+    ## objectives
+    ## research questions
+    ## background
+# data preparation
+    ## data description
+    ## data cleaning
+# modeling
+    ## methods
+    ## stepwise
+    ## transformations
+    ## interactions
+# evaluation
+    ## multicollinearity
+    ## influential/outliers
+    ## residual shapiro test
+    ## assessing model assumptions
+# conclusion
+    ## adjusted r^2
+# reference
