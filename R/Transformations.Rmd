@@ -119,9 +119,6 @@ plot(log(Dat[,16]), Dat[,2], xlab = colnames(Dat)[16], ylab = colnames(Dat)[2])
 colnames(Dat2)
 ```
 
-```{r}
-sum(!complete.cases(Dat2))
-```
 
 ```{r}
 model2 <- lm(Life.expectancy ~ ., data = Dat2)
@@ -140,7 +137,7 @@ for(i in 1:ncol(Dat2))
 
 
 ```{r}
-Dat3 <- Dat2[,-c(7, 15, 18, 20)]
+Dat3 <- Dat2[,-c(7, 15, 16, 18, 19, 20)]
 model3 <- lm(Life.expectancy ~ ., data = Dat3)
 summary(model3)
 ```
@@ -149,10 +146,16 @@ summary(model3)
 vif(model3)
 ```
 
+```{r}
+#cbind(1:ncol(Dat2), colnames(Dat2))
+as.matrix(colnames(Dat3))
+```
 
 ```{r}
-round(cor(Dat3[,-c(1,2)]), 2)
+round(cor(Dat3[,-c(1,2)]) , 2)
 ```
+
+
 
 ```{r}
 library(StepReg)
@@ -168,66 +171,116 @@ DatSw <- Dat2
 DatSw$Status <- ifelse(Dat$Status == "Developing", 0, 1)
 stepwise(DatSw, "Life.expectancy", selection = "bidirection", select = "adjRsq")
 ```
+
+# Removing outliers
+
 ```{r}
-modelSw <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + Total.expenditure + Status + Diphtheria, data = DatSw)
+k = 6
+n = 157
+
+#hatvalues(modelSw) #High leverage if hatvalue > 2*(k+1)/n
+leverage <- as.vector( which(hatvalues(modelSw) > (2*(k+1)/n))) #
+```
+
+```{r}
+#rstandard(modelSw) #outlier if abs(rstandard) > 3
+#which(abs(rstandard(modelSw)) > 3) # Obs 16 127 is flagged
+#rstudent(modelSw) #outlier if abs(rstudent) > 3
+outliers <- as.vector(which(abs(rstudent(modelSw)) > 3)) # Obs 16 127 is flagged
+```
+
+
+
+```{r}
+#dffits(modelSw) #influential if abs(dffits) > 2*sqrt((k+2)/(n-k-2))
+difft <- as.vector(which(abs(dffits(modelSw)) > (2*sqrt((k+2)/(n-k-2))))) # Obs 16 48 127 are flagged
+```
+
+```{r}
+#cooks.distance(modelSw) #influential if d > 1
+crooks <- as.vector(which(cooks.distance(modelSw) > 1)) #
+```
+
+```{r}
+#covratio(modelSw) #influential if covratio > 1 + 3*(k+1)/n OR covratio < 1 - 3*(k+1)/n
+covs1 <- as.vector(which(covratio(modelSw) > (1 + 3*(k+1)/n))) #
+covs2 <- as.vector(which(covratio(modelSw) < (1 - 3*(k+1)/n))) # Obs 127 are flagged
+```
+
+```{r}
+leverage
+outliers
+difft
+crooks
+covs1
+covs2
+```
+
+```{r}
+table(c(leverage,
+outliers,
+difft,
+crooks,
+covs1,
+covs2))
+
+```
+
+```{r}
+DatSw2 <- Dat[-c(16, 81, 127,  4,  32,  46,  54,  58,  74, 114 ),]
+modelSw2 <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + Total.expenditure + Status + Diphtheria, data = DatSw2)
+summary(modelSw2)
+```
+
+```{r}
 summary(modelSw)
 ```
 
-```{r}
-MASS::truehist(modelSw$residuals, nbins = 20, main = as.numeric(shapiro.test(modelSw$residuals)))
-curve(dnorm(x, sd=sd(modelSw$residuals)), add=TRUE)
-```
+
+## Interactions
 
 ```{r}
-plot(modelSw$fitted.values, scale(modelSw$residuals))
-abline(h=0)
-```
-
-```{r}
-qqnorm(modelSw$residuals)
-qqline(modelSw$residuals)
-```
-
-```{r fig.height=7, fig.width=6}
-par(mfrow = c(3, 3))
-for(i in (1:ncol(Dat2))[-c(1,i0)]) {
-  plot(Dat2[,i], Dat2[,i0], xlab=colnames(Dat2)[i])
-}
-```
-
-
-
-```{r}
-library(EnvStats)
-```
-
-```{r}
-x <- Dat[,20]
-bc <-boxcox(1+min(x) + x, lambda = seq(-3, 3, .01))
-max <- 0.95*max(bc$objective)
-rang <- range(bc$lambda[bc$objective>max])
-plot(bc$lambda, bc$objective, type = "l", lwd = 2, main = bc$lambda[which.max(bc$objective)])
-abline(h=max)
-abline(v=rang, lty = 2)
-abline(v = bc$lambda[which.max(bc$objective)])
-```
-
-```{r}
-model2
+#modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources * Adult.Mortality * HIV.AIDS * Total.expenditure * Status * Diphtheria, data = #DatSw2)
+#sumSw3 <- summary(modelSw3)
+#sumSw3
 ```
 
 
 ```{r}
-MASS::boxcox(Life.expectancy ~ ., data = Dat2)
+#pvals = sumSw3$coefficients[,4]
+#pvals[pvals < 0.2]
+```
+
+
+```{r}
+modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources + HIV.AIDS + Adult.Mortality*Total.expenditure   + Status * Diphtheria, data = DatSw2)
+sumSw3 <- summary(modelSw3)
+sumSw3
 ```
 
 ```{r}
-MASS::boxcox(Volume ~ log(Height) + log(Girth), data = trees,
-       lambda = seq(-0.25, 0.25, length = 10))
+model_final <- modelSw3
+```
+
+
+# Residuals' test
+
+```{r}
+res <- model_final$residuals
+MASS::truehist(res, nbins = 20, main = shapiro.test(res)$p.value)
+curve(dnorm(x, sd = sd(res)), add = TRUE)
 ```
 
 ```{r}
-MASS::boxcox(Days+1 ~ Eth*Sex*Age*Lrn, data = quine,
-       lambda = seq(-0.05, 0.45, len = 20))
+length(res)
+```
+
+```{r}
+plot(model_final$fitted.values, res)
+abline(h=c(0, 2*sd(res), -2*sd(res)))
+```
+
+```{r}
+which( abs(res) > 2*sd(res) )
 ```
 
