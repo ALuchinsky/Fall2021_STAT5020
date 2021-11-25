@@ -1,8 +1,46 @@
-
 \section{Modeling}
 \label{sec:modeling}
 
+In this section, we are going to introduce how we create the models fitting the best on the dataset to predict the Life.expectancy. 
+
 % ## methods
-% ## stepwise
+
+In this subsection, we briefly introduce the methods taht we used to complete the modeling. We used the multilinear regression, stepwise regression, user-defined variable transformation, and vif function as the Variance Inflation Factors in rstudio
+
 % ## transformations
+
+In this subsection, the transformation that we applied to the dataset is described in detail. The transformation fucntion is creted as shown below:
+
+`transform <- function(x, scale) {
+  if(scale == 0) return(log(1 + min(x) + x))
+  else return(x^scale)
+}`
+
+The function takes two arguments, x as the original input value, and scale as the scaling value to be determined. We have a condition option for the user to choose, when scale equals to 0, the the original input will be calculated as log(1 + min(x) + x); when the scale is given as a number that does not equals to 0, then the transformed input will be x^scale.
+
+The dataset that we used in our project is after the transformation.
+
+% ## stepwise
+
+Stepwise model selection approach is a way to iteratively adding and/or removing candidate variables to build a subset of variables in the provided dataset for better model. Stepwise regression includes forward, backward, and bidirection methods. In our project, we choose to use bidirection method for more flexible and approapriate models. The key r code to apply this step is listed below:
+
+'stepwise(DatSw, "Life.expectancy", selection = "bidirection", select = "adjRsq")'
+
+In library(StepReg), stepwise is a built-in function that provides the functionalities for user to choose the direction to select the predictors, as well as the criterion. "asjRsq" as adjusted r squared is used to judge if the model is good enough as the predictor selection process goes.
+
+% ## bidirection model optimization 
+
+After we get a relatively good model, we choose to use vif function and remove the outliers to optimize the model.
+
+modelSw2 <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + Total.expenditure + Status + Diphtheria, data = DatSw2)
+
+The Adjusted R-squared of this model is 0.9123. The F-statistic is 254 and the p-value is < 2.2e-16.
+
 % ## interactions
+
+Interactions are also a critical aspect that we wanted to consider. wWe firstly consider about all the possible interactions may happened in the model, using the r code below to create a gaint model:
+
+modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources * Adult.Mortality * HIV.AIDS * Total.expenditure * Status * Diphtheria, data = #DatSw2)
+
+The Adjusted R-squared of this model is 0.9134. The F-statistic is 193.4 and the p-value is < 2.2e-16.
+
