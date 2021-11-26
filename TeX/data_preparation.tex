@@ -1,4 +1,46 @@
-\section{data preparation}
+\section{Data Description and Preparation}
 \label{sec:data-preparation}
+
+In this project, we have selected the Global Health Observatory (GHO) data repository under the World Health Organization (WHO) dataset\footnote{https://www.kaggle.com/kumarajarshi/life-expectancy-who}. We considered the data from 2000 to 2015 for 193 countries, in total 2938 rows available for statistical analysis. For each country and year 22 fields are stored. The detailed description of these fileds is presented in table \ref{tab:description}.
+
+\begin{table}
+  \centering
+  \begin{tabular}{p{0.1\linewidth} | p{0.3\linewidth}p{0.5\linewidth}p{0.1\linewidth}}
+      & Column Name     & Description                                                             & type \\
+    \hline
+    1 & Status                 & Developed or Developing status                               & string \\
+    2 & Life expectancy   & Life Expectancy in age                                             & float \\
+    3 & Adult Mortality    & Adult Mortality Rates of both sexes (probability of dying between 15 and 60 years per 1000 population) & integer \\
+    4 & infant deaths      & Number of Infant Deaths per 1000 population & integer \\
+    5 & Alcohol              & Alcohol, recorded per capita (15+) consumption (in litres of pure alcohol) & float \\
+    6 & percentage expenditure & Expenditure on health as a percentage of Gross Domestic Product per capita(\%) & float \\
+    7 & Hepatitis B & Hepatitis B (HepB) immunization coverage among 1-year-olds (\%) & integer \\
+    8 & Measles & number of reported cases per 1000 population & integer \\
+    9 & BMI & Average Body Mass Index of entire population & float \\
+    10 & under-five deaths & Number of under-five deaths per 1000 population & integer \\
+    11 & Polio & Polio (Pol3) immunization coverage among 1-year-olds (\%) & integer \\
+    12 & Total expenditure & General government expenditure on health as a percentage of total government expenditure (\%) & float \\
+    13 & Diphtheria & Diphtheria tetanus toxoid and pertussis (DTP3) immunization coverage among 1-year-olds (\%) & number \\
+    14 & HIV/AIDS & Deaths per 1 000 live births HIV/AIDS (0-4 years) & number \\
+    15 & GDP & Gross Domestic Product per capita (in USD) & number \\
+    16 & Population & Population of the country & number \\
+    17 & thinness 1-19 years & Prevalence of thinness among children and adolescents for Age 10 to 19 (\%) & number \\
+    18 & thinness 5-9 years & Prevalence of thinness among children for Age 5 to 9(\%) & number \\
+    19 & Income composition of resources & Human Development Index in terms of income composition of resources (index ranging from 0 to 1) & number \\
+    20 & Year                     & Year & number \\
+    \hline
+  \end{tabular}
+  \caption{Description of the data set fields}
+  \label{tab:description}
+\end{table}
+
+Most of the regressors are numerical and can be used in the analysis without modifications. There are a few regressors that are not: Country, year, and status. While year appears numerical, we would argue that it should be treated as a categorical variable. After the data verification, we noticed that there are some missing values in the dataset. We will use various methods to clean the dataset and either impute the missing values or remove some of the regressors or records.
+
 % ## data description
+
 % ## data cleaning
+
+
+%%% Local Variables:
+%%% TeX-master: "main"
+%%% End:
