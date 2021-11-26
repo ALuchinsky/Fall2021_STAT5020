@@ -12,3 +12,6 @@ TeX/main.pdf
 TeX/main.synctex.gz
 *.out
 *.toc
+*.bbl
+*.blg
+

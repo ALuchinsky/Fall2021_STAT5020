@@ -5,9 +5,21 @@
 \usepackage{setspace}
 
 \begin{document}
-\doublespacing
 
-\tableofcontents
+\begin{titlepage}
+\thispagestyle{empty}
+\title{Factors Correlated with Life Expectancy Around the World\\
+\large Group 1 Project}
+\author{Aleksei Luchinsky, Jingyi Su, Kim Brooks, Vibhuti Chandna}
+\date{}
+\maketitle
+\tableofcontents  
+\end{titlepage}
+
+\clearpage\newpage
+\setcounter{page}{1}
+
+\doublespacing 
 
 \input{intro}
 \input{data_preparation}
@@ -16,5 +28,10 @@
 \input{conclusion}
 % # reference
 
+\let\Section\section 
+\def\section*#1{\Section{#1}} 
+\bibliographystyle{alpha}
+\bibliography{refrences}
 
 \end{document}
+
