@@ -8,9 +8,10 @@ In this project, we have selected the Global Health Observatory (GHO) data repos
 
 \begin{table}
   \centering
-  \begin{tabular}{p{0.1\linewidth} | p{0.3\linewidth}p{0.5\linewidth}p{0.1\linewidth}}
+  \begin{tabular}{@{}p{0.1\linewidth}  p{0.3\linewidth}p{0.5\linewidth}p{0.1\linewidth}@{}}
+    \toprule
       & Column Name     & Description                                                             & type \\
-    \hline
+    \midrule 
     1 & Status                 & Developed or Developing status                               & string \\
     2 & Life expectancy   & Life Expectancy in age                                             & float, target variable \\
     3 & Adult Mortality    & Adult Mortality Rates of both sexes (probability of dying between 15 and 60 years per 1000 population) & integer \\
@@ -31,7 +32,7 @@ In this project, we have selected the Global Health Observatory (GHO) data repos
     18 & thinness 5-9 years & Prevalence of thinness among children for Age 5 to 9(\%) & number \\
     19 & Income composition of resources & Human Development Index in terms of income composition of resources (index ranging from 0 to 1) & number \\
     20 & Year                     & Year & number \\
-    \hline
+    \bottomrule
   \end{tabular}
   \caption{Description of the data set fields}
   \label{tab:description}
@@ -50,9 +51,9 @@ In table \ref{tab:missing} we present the information about the missing data in 
 \begin{table}[ht]
 \centering
 \begin{tabular}{rlrrr}
-  \hline
+  \toprule
  & name & Present & Missing & MissingPCT \\ 
-  \hline
+  \midrule
 6 & Population & 142 &  41 &  22 \\ 
   5 & GDP & 155 &  28 &  15 \\ 
   2 & Hepatitis.B & 173 &  10 &   5 \\ 
@@ -63,7 +64,7 @@ In table \ref{tab:missing} we present the information about the missing data in 
   7 & thinness..1.19.years & 181 &   2 &   1 \\ 
   8 & thinness.5.9.years & 181 &   2 &   1 \\ 
   1 & Alcohol & 182 &   1 &   0 \\ 
-   \hline
+   \bottomrule
 \end{tabular}
 \caption{Missing data in 2014 year subset}
 \label{tab:missing}
