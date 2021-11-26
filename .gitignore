@@ -10,4 +10,5 @@ TeX/main.aux
 TeX/main.log
 TeX/main.pdf
 TeX/main.synctex.gz
-
+*.out
+*.toc
