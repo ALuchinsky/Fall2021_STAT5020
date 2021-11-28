@@ -1,21 +1,21 @@
 \section{Modeling}
 \label{sec:modeling}
 
-In this section, we are going to introduce how we create the models fitting the best on the dataset to predict the Life.expectancy. The dataset that we used to after the data pre-processing and cleaning. The original dataset contains 157 observations and 23 variables in total to consider as the regression model. We removed X, Country and Year from the original dataset and did some transformations to produce a better model in several steps for predicting the Life.expectancy in 2014 worldwide.
+In this section, we are going to introduce how we create the models fitting the best on the dataset to predict the Life.expectancy. The dataset that we used to after the data pre-processing and cleaning. The original dataset contains 157 observations and 23 variables in total to consider as the regression model. We removed X, Country, and Year from the original dataset and did some transformations to produce a better model in several steps for predicting the Life.expectancy in 2014 worldwide.
 
-% ## Method overview
+\subsection{Method overview}
 
 In this subsection, we briefly introduce the methods that we used to complete the modeling. We used the multilinear regression, stepwise regression, user-defined variable transformation, and vif function as the Variance Inflation Factors in rstudio.
 
-Multilinear regression is an extended regression of simple linear regression. It provides more functionalities so that it can support users to predict the response with multiple regressors. In R, the mlr function usually is used with the summary function to display the overall quality of the selected model. In next a few subsections, we will discuss how we implement the stepwise regression, variable transformation, and vif function in our model process.
+Multilinear regression is an extended regression of simple linear regression. It provides more functionalities so that it can support users to predict the response with multiple regressors. In R, the mlr function usually is used with the summary function to display the overall quality of the selected model. In the next few subsections, we will discuss how we implement the stepwise regression, variable transformation, and vif function in our model process.
 
 Additionally, as the first regression model with all predictors, we got the Adjusted R-squared: 0.8615, F-statistic: 52.08 and p-value: < 2.2e-16 by executing the r code below:
 
 summary(lm(Life.expectancy ~ ., data = Dat))
 
-In the next steps, we tried to improve the Adjusted R-squared score with the knowledge that we learned in class STAT 5020.
+According to the R output, not all regressors are significant enough to contribute to the prediction model. Thus, in the next steps, we tried to improve the Adjusted R-squared score with the knowledge that we learned in class STAT 5020.
 
-% ## Data Transformation
+\subsection{Data Transformation}
 
 In this subsection, the transformation that we applied to the dataset is described in detail. The transformation fucntion is creted as shown below:
 
@@ -26,29 +26,52 @@ In this subsection, the transformation that we applied to the dataset is describ
 
 The function takes two arguments, x as the original input value, and scale as the scaling value to be determined. We have a condition option for the user to choose when scale equals 0, the original input will be calculated as log(1 + min(x) + x); when the scale is given as a number that does not equal to 0, then the transformed input will be x^scale.
 
-The dataset that we used in our project is after the transformation.
+The dataset that we used in our project is after the transformation applied on log_infant.deaths, log_percentage.expenditure, log_Measles, log_under.five.deaths, log_GDP, and log_Population.
 
-% ## Stepwise modeling
+model2 <- lm(Life.expectancy ~ ., data = Dat2)
 
-The stepwise model selection approach is a way to iteratively add and/or remove candidate variables to build a subset of variables in the provided dataset for a better model. Stepwise regression includes forward, backward, and bidirectional methods. In our project, we choose to use the bidirection method for more flexible and appropriate models. The key r code to apply this step is listed below:
+Thus, we got the Adjusted R-squared: 0.8775, F-statistic: 59.83 and p-value: < 2.2e-16 from the new model with the new transformed dataset Dat2.
 
-'stepwise(DatSw, "Life.expectancy", selection = "bidirection", select = "adjRsq")'
+\subsection{Variance Inflation Factors}
 
-In library(StepReg), stepwise is a built-in function that provides the functionalities for a user to choose the direction to select the predictors, as well as the criterion. "asjRsq" as adjusted r squared is used to judge if the model is good enough as the predictor selection process goes.
+The next step is to check the Variance Inflation Factors to check the collinearity problem, and this step is repeated several times as we finalize the model comparing with the correlation. We removed Hepatitis.B, log_GDP, log_Population, thinness.5.9.years, Income.composition.of.resources, and Schooling after the check. More details will be provided in the evaluation section.
 
-% ## Bidirection model optimization 
+Dat3 <- Dat2[,-c(7, 15, 16, 18, 19, 20)]
+model3 <- lm(Life.expectancy ~ ., data = Dat3)
 
-After we get a relatively good model, we choose to use vif function and remove the outliers to optimize the model.
+The new model showed the Adjusted R-squared: 0.7849, F-statistic:  44.8, and p-value: < 2.2e-16.
+
+
+\subsection{Stepwise modeling}
+
+The stepwise model selection approach is a way to iteratively add and/or remove candidate variables to build a subset of variables in the provided dataset for a better model. Stepwise regression includes forward, backward, and bidirectional methods. In our project, we choose to use the bidirectional method for more flexible and appropriate models. The key r code to apply this step is listed below. Noted that as the column Status is a binary categorical field, we converted the text values to 1 for Developed and 0 for Developing.
+
+\subsection{Bidirection model optimization}
+
+DatSw <- Dat2
+DatSw$Status <- ifelse(Dat$Status == "Developing", 0, 1)
+stepwise(DatSw, "Life.expectancy", selection = "bidirection", select = "adjRsq")
+
+In library(StepReg), stepwise is a built-in function that provides the functionalities for a user to choose the direction to select the predictors, as well as the criterion. "asjRsq" as adjusted r squared is used to judge if the model is good enough as the predictor selection process goes. During this step, variates "intercept", "Income.composition.of.resources", "Adult.Mortality", "HIV.AIDS", "Total.expenditure", "log_Measles", "log_Population", "log_infant.deaths", "Diphtheria""Schooling" are selected by the order of the improvement of "adjRsq".
+
+modelSw <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + Total.expenditure + log_Measles + log_Population + log_infant.deaths + Diphtheria + Schooling, data = DatSw)
+
+The model showed the Adjusted R-squared:  0.8828, F-statistic: 131.5 and p-value: < 2.2e-16.
+
+After we get a relatively good model, we choose to use vif function and remove the outliers to optimize the model. Details will be provided separately in the Evaluation section. After we removed the outliers, the model is presented as below:
 
 modelSw2 <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + Total.expenditure + Status + Diphtheria, data = DatSw2)
 
-The Adjusted R-squared of this model is 0.9123. The F-statistic is 254 and the p-value is < 2.2e-16.
+The Adjusted R-squared of this model is 0.9123. The F-statistic is 254 and the p-value is < 2.2e-16. 
 
-% ## interactions
+\subsection{interactions}
 
 Interactions are also a critical aspect that we wanted to consider. We firstly consider all the possible interactions that may happen in the model, using the r code below to create a complex model with interactions:
 
 modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources * Adult.Mortality * HIV.AIDS * Total.expenditure * Status * Diphtheria, data = #DatSw2)
 
-The Adjusted R-squared of this model is 0.9134. The F-statistic is 193.4 and the p-value is < 2.2e-16.
+In this complex model, we got the highest Adjusted R-squared: 0.9193, but it is not a good model for interpreting and it is too complicated for production usage. We consider about the p-value on the threshold around 0.2 to produce the final model below:
 
+modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources + HIV.AIDS + Adult.Mortality*Total.expenditure + Status * Diphtheria, data = DatSw2)
+
+The Adjusted R-squared of this model is 0.9134. The F-statistic is 193.4 and the p-value is < 2.2e-16. We are satisfied with this model as it gives a good Adjusted R-squared as well as a relatively acceptable number of predictors in the model.
