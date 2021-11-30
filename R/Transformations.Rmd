@@ -172,6 +172,12 @@ DatSw$Status <- ifelse(Dat$Status == "Developing", 0, 1)
 stepwise(DatSw, "Life.expectancy", selection = "bidirection", select = "adjRsq")
 ```
 
+```{r}
+modelSw <- lm(formula = Life.expectancy ~ Income.composition.of.resources + 
+    Adult.Mortality + HIV.AIDS + Total.expenditure + Status + 
+    Diphtheria, data = DatSw)
+```
+
 # Removing outliers
 
 ```{r}
@@ -282,5 +288,6 @@ abline(h=c(0, 2*sd(res), -2*sd(res)))
 
 ```{r}
 which( abs(res) > 2*sd(res) )
+shapiro.test(res)$p.value
 ```
 
