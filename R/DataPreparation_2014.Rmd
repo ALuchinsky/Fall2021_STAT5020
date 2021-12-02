@@ -12,25 +12,53 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 rm(list = ls())
 library(dplyr)
+library(xtable)
+library(ggplot2)
 source("../R/scripts/print_missing.R")
 ```
 
 
 ```{r}
-Dat <- read.csv("../data/external/Life Expectancy Data.csv")
+Dat_orig  <- read.csv("../data/external/Life Expectancy Data.csv")
+Dat <- Dat_orig
 str(Dat)
 ```
+
+```{r}
+Dat_orig %>% filter( is.na(Population)) %>% select(Country) %>% unique
+```
+```{r}
+Dat_orig %>% group_by(Country) %>% summarise(nmis = sum(is.na(Population))) %>% filter(0 < nmis )
+```
+```{r}
+Dat_orig$Year %>% unique %>% length
+```
+
+
+
+```{r}
+Dat %>% print_missing %>% select(-c(Type, nUnique)) %>% xtable
+```
+
 
 ```{r}
 year <- 2014
 ```
 
 
+
 Only this year is required
 
 ```{r}
 Dat <- filter(Dat, Year == year)
-print_missing(Dat )
+miss_2014 <- print_missing(Dat, only_missing = TRUE )
+miss_2014
+```
+
+
+
+```{r}
+miss_2014 %>% select(-c(Type, nUnique)) %>% xtable
 ```
 
 
@@ -40,10 +68,11 @@ There are 41 country with missing population. We can try to get this information
 
 
 ```{r}
-data_population <- 
+data_WB <- 
   read.csv("../data/external/API_SP.POP.TOTL_DS2_en_csv_v2_3158886/API_SP.POP.TOTL_DS2_en_csv_v2_3158886.csv", skip = 3) %>% 
   gather(Year, Population, X1960:X2020) %>% select(Country.Name, Year, Population) %>% 
-  transmute(Country = Country.Name, Year = floor(as.numeric(str_sub(Year, 2, 5))), Population.y = Population) %>% 
+  transmute(Country = Country.Name, Year = floor(as.numeric(str_sub(Year, 2, 5))), Population.y = Population) 
+data_population <- data_WB %>%
   filter(Year == year)
 head(data_population)
 ```
@@ -102,6 +131,18 @@ comp_merged
 ```
 
 ```{r}
+country = "Afghanistan"
+rbind(
+  Dat_orig %>% filter(Country == country) %>% select(Year, Population) %>% add_column(type = "WHO"), 
+  data_WB %>% filter(Country == country & Year %in% Dat_orig$Year) %>% rename(Population = Population.y) %>%  select(Year, Population) %>% add_column(type = "WB")
+) %>% mutate(Population = 1e-6*Population) %>% 
+  ggplot(aes(x=Year, y = Population, group = type, color = type)) + geom_line() + geom_point()
+  ylab("Population, millions")
+  ggsave("../TeX/figures/Afghanistan_population_comparison.pdf")
+```
+
+
+```{r}
 MASS::truehist(comp_merged$rat, nbins = 100)
 ```
 
@@ -134,6 +175,72 @@ GDP$GDP.y <- GDP$IHME.GDP.estimate..2005.international.dollars. %>% trimws %>% s
 GDP$GDP.y <- 1e6*GDP$GDP.y
 ```
 
+```{r}
+Dat_orig %>% 
+```
+
+
+```{r}
+Dat_orig %>% filter(is.na(GDP)) %>% group_by(Country) %>% summarise(nmis = n()) %>% arrange(nmis) 
+```
+
+```{r}
+Dat_orig %>% filter(is.na(GDP)) %>% group_by(Country) %>% summarise(nmis = n()) %>% filter(nmis >8) %>% nrow
+```
+
+```{r}
+colnames(Dat_orig)
+```
+
+```{r}
+country_
+```
+
+
+```{r}
+countries <- unique(Dat_orig$Country)
+calc_year_variation <- function(country, iv) {
+  dat <- Dat_orig %>% filter(Country == country) %>% .[,iv] 
+  if(any(is.na(dat))) {
+    return(NA)
+  } else {
+    return(sd(dat)/mean(dat))
+  }
+}
+i <- 17
+print(colnames(Dat_orig)[i])
+vars <- sapply(countries, function(c) calc_var(c, i))
+vars <- vars[!is.na(vars)]
+max(vars)
+names(which.max(vars))
+```
+
+```{r}
+dat <- Dat_orig %>% filter(Country == countries[1]) %>% .[,13]
+rat = dat[2:length(dat)]/dat[1:(length(dat)-1)]
+sd(rat)/mean(rat)
+```
+
+```{r}
+par(mfrow=c(1,2))
+plot(dat)
+plot(rat, ylim=c(0,2))
+```
+
+
+```{r}
+Dat_orig %>% filter(Country == "Norway") %>% ggplot(aes(x=Year, y=GDP)) + geom_line()
+```
+
+
+```{r}
+colnames(Dat_orig)[12]
+```
+
+
+```{r}
+which( colnames(Dat_orig) == "Population" )
+```
 
 
 Comparing GDP data from two sources
