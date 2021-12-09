@@ -2,7 +2,10 @@
 title: "Transformation"
 author: "Alexey Luchinsky"
 date: "11/16/2021"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
@@ -12,11 +15,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 rm(list = ls())
 library(dplyr)
+library(stringr)
 ```
 
 ```{r}
 year <- 2014
 ```
+
+# Preparing Data
 
 ```{r}
 Dat <- read.csv(paste("../data/processed/prepared_data_",year,".csv", sep=""))
@@ -28,7 +34,6 @@ Removing unused components:
 ```{r}
 sum(!complete.cases(Dat))
 ```
-
 
 ```{r}
 Dat <- Dat[,-c(1,2,3)]
@@ -43,7 +48,6 @@ r20 <- sum$r.squared
 sum
 ```
 
-
 ```{r}
 ncol(Dat)
 ```
@@ -55,12 +59,10 @@ transform <- function(x, scale) {
 }
 ```
 
-
 ```{r}
 i0 <- 2
 Dat2 <- Dat
 ```
-
 
 ```{r}
 i <- 4
@@ -114,16 +116,16 @@ colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
 plot(log(Dat[,16]), Dat[,2], xlab = colnames(Dat)[16], ylab = colnames(Dat)[2])
 ```
 
-
 ```{r}
 colnames(Dat2)
 ```
-
 
 ```{r}
 model2 <- lm(Life.expectancy ~ ., data = Dat2)
 summary(model2)
 ```
+
+# Multicollinearity
 
 ```{r}
 library(car)
@@ -134,7 +136,6 @@ vif(model2)
 for(i in 1:ncol(Dat2))
   print(paste(i, colnames(Dat2)[i]))
 ```
-
 
 ```{r}
 Dat3 <- Dat2[,-c(7, 15, 16, 18, 19, 20)]
@@ -155,65 +156,188 @@ as.matrix(colnames(Dat3))
 round(cor(Dat3[,-c(1,2)]) , 2)
 ```
 
-
+# Stepwise
 
 ```{r}
 library(StepReg)
 ```
 
 ```{r}
-str(Dat2)
+str(Dat3)
+```
+
+```{r}
+colnames(Dat3)
+```
+
+```{r}
+Dat3_ <- Dat3
+Dat3_ <- cbind(select(Dat3_, Life.expectancy), select(Dat3_, -Life.expectancy))
+Dat3_$Status <- ifelse(Dat3_$Status == "Developing", 0, 1)
+sw <- stepwise(Dat3_, "Life.expectancy", selection = "bidirection", select = "adjRsq")
+```
+
+```{r}
+DatSw <- select(Dat3_, c("Life.expectancy", sw$variate[-1]))
+modelSw <- lm(Life.expectancy ~ ., data = DatSw)
+summary(modelSw)
+```
+
+# Interactions
+
+```{r}
+# make_int_formula <- function(dat, i1, i2, i0 = 1) {
+#   names <- colnames(dat)
+#   
+#   f <- paste(names[i0], "~", 
+#       paste(names[-c(i0, i1, i2)], collapse  = " + "))
+#   if(i1 > 0 && i2 > 0) {
+#     f <- paste(f, " + ", names[i1], "*", names[i2])
+#   }
+#   f  
+# }
+
+make_int_formula <- function(mod, i1, i2) {
+  sum <- summary(mod)
+  terms <- as.character(sum$terms)
+  vars <- as.vector( 
+    sapply( strsplit( terms[[3]], "\\+")[[1]], function(T) str_trim(T))
+  )
+  vars <- vars[ !grepl("\\*", vars)]
+#  print(vars)
+  vars_wo <- vars
+  if(i1>0 && i2>0) {
+    vars_wo <- vars[-c(i1, i2)]
+  }
+#  print(vars_wo)
+  f <- paste(terms[[2]], "~", paste(vars_wo, collapse  = " + "))
+  if(i1 > 0 && i2 > 0) {
+    f <- paste(f, " + ", vars[i1], "*", vars[i2])
+  }
+  f  
+}
+make_int_model <- function(mod, i1, i2) {
+#  if(i1 == 0 || i2 == 0) return(NA)
+  f <- make_int_formula(mod, i1, i2)
+  new_mod <- lm(formula = f, data = mod$model)
+  new_mod  
+}
+
+make_int <- function(mod, i1, i2) {
+  new_mod <- make_int_model(mod, i1, i2)
+  sum <- summary(new_mod)
+  c(i1, i2, sum$r.squared, sum$adj.r.squared)
+}
+
+find_best_int <- function(mod, exclude = c()) {
+  xxx <- data.frame(matrix(ncol=4, nrow=0))
+  xxx <- rbind(xxx, make_int(mod, 0,0))
+  max <- ncol(mod$model) -1
+   for(i1 in 1:(max-1)) {
+     for(i2 in (i1+1):max) {
+       int <- make_int(mod, i1, i2)
+       if(any(is.na(int))) next;
+       xxx <- rbind(xxx, int)
+     }
+   }
+  colnames(xxx) <- c("i1", "i2", "R2", "adjR2")
+  arrange(xxx, desc(adjR2))
+}
+```
+
+Searching for best interaction combinations
+
+```{r}
+xxx <- find_best_int(modelSw)
+head(xxx)
+```
+
+```{r}
+vars <- as.character(summary(modelSw)$terms)[[3]] %>% strsplit("\\+") %>% .[[1]] %>% str_trim
+data_int <- filter(xxx, i1 >0 & i2>0)
+data_int$v1 <- vars[data_int$i1]
+data_int$v2 <- vars[data_int$i2]
+data_int_ <- data_int %>% arrange(desc(adjR2)) %>% mutate(v1v2 = paste(v1, v2, sep="*")) 
+data_int_ %>% mutate(R2 = round(R2, 4), adjR2 = round(adjR2, 4)) %>% select(v1v2, R2, adjR2) %>% head(5) 
 ```
 
 
 ```{r}
-DatSw <- Dat2
-DatSw$Status <- ifelse(Dat$Status == "Developing", 0, 1)
-stepwise(DatSw, "Life.expectancy", selection = "bidirection", select = "adjRsq")
+plot(xxx$R2, type = "o", ylim=c(0.785, 0.82), xlim = c(1, 20), xlab = NA, ylab = "R2")
+lines(xxx$adjR2, type = "o", col="red")
+legend("topright", legend = c("R2", "adjR2"), lty = 1, pch=1, col=c("black", "red"))
 ```
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(tibble)
+```
+
+
+```{r}
+modelInt <- make_int_model(modelSw, 1, 4)
+summary(modelInt)
+```
+
+Adult.Mortality:HIV.AIDS seems to be most interesting
+
+Selecting only significant vars:
+
+```{r}
+coeffs <- summary(modelInt)$coefficients
+coeffs[coeffs[,4] < 0.15,]
+```
+
+```{r}
+final_model <- lm(Life.expectancy ~ 
+   Alcohol + log_percentage.expenditure + Status + Total.expenditure + Adult.Mortality*HIV.AIDS
+, data <- DatSw)
+summary(final_model)
+```
+
+This model looks fine
 
 # Removing outliers
 
 ```{r}
-k = 6
-n = 157
+k <- length(final_model$coefficients)-1
+n = nrow(DatSw)
 
 #hatvalues(modelSw) #High leverage if hatvalue > 2*(k+1)/n
-leverage <- as.vector( which(hatvalues(modelSw) > (2*(k+1)/n))) #
+leverage <- as.vector( which(hatvalues(final_model) > (2*(k+1)/n))) #
 ```
 
 ```{r}
 #rstandard(modelSw) #outlier if abs(rstandard) > 3
 #which(abs(rstandard(modelSw)) > 3) # Obs 16 127 is flagged
 #rstudent(modelSw) #outlier if abs(rstudent) > 3
-outliers <- as.vector(which(abs(rstudent(modelSw)) > 3)) # Obs 16 127 is flagged
-```
-
-
-
-```{r}
-#dffits(modelSw) #influential if abs(dffits) > 2*sqrt((k+2)/(n-k-2))
-difft <- as.vector(which(abs(dffits(modelSw)) > (2*sqrt((k+2)/(n-k-2))))) # Obs 16 48 127 are flagged
+outliers <- as.vector(which(abs(rstudent(final_model)) > 3)) # Obs 16 127 is flagged
 ```
 
 ```{r}
-#cooks.distance(modelSw) #influential if d > 1
-crooks <- as.vector(which(cooks.distance(modelSw) > 1)) #
+
+difft <- as.vector(which(abs(dffits(final_model)) > (2*sqrt((k+2)/(n-k-2)))))
 ```
 
 ```{r}
-#covratio(modelSw) #influential if covratio > 1 + 3*(k+1)/n OR covratio < 1 - 3*(k+1)/n
-covs1 <- as.vector(which(covratio(modelSw) > (1 + 3*(k+1)/n))) #
-covs2 <- as.vector(which(covratio(modelSw) < (1 - 3*(k+1)/n))) # Obs 127 are flagged
+crooks <- as.vector(which(cooks.distance(final_model) > 1)) #
 ```
 
 ```{r}
-leverage
-outliers
-difft
-crooks
-covs1
-covs2
+covs1 <- as.vector(which(covratio(final_model) > (1 + 3*(k+1)/n))) #
+covs2 <- as.vector(which(covratio(final_model) < (1 - 3*(k+1)/n))) # 
+```
+
+```{r}
+list(
+  leverage = leverage,
+  outliers = outliers,
+difft = difft, 
+crooks = crooks,
+covs1 = covs1,
+covs2 = covs2
+)
 ```
 
 ```{r}
@@ -227,60 +351,110 @@ covs2))
 ```
 
 ```{r}
-DatSw2 <- Dat[-c(16, 81, 127,  4,  32,  46,  54,  58,  74, 114 ),]
-modelSw2 <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + Total.expenditure + Status + Diphtheria, data = DatSw2)
-summary(modelSw2)
+Dat_cleaned <- DatSw[-127];
+model_cleaned <- lm(
+  Life.expectancy ~  Alcohol + log_percentage.expenditure + Status + Total.expenditure + Adult.Mortality*HIV.AIDS
+, data = Dat_cleaned)
+summary(model_cleaned)
 ```
 
 ```{r}
-summary(modelSw)
-```
-
-
-## Interactions
-
-```{r}
-#modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources * Adult.Mortality * HIV.AIDS * Total.expenditure * Status * Diphtheria, data = #DatSw2)
-#sumSw3 <- summary(modelSw3)
-#sumSw3
-```
-
-
-```{r}
-#pvals = sumSw3$coefficients[,4]
-#pvals[pvals < 0.2]
-```
-
-
-```{r}
-modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources + HIV.AIDS + Adult.Mortality*Total.expenditure   + Status * Diphtheria, data = DatSw2)
-sumSw3 <- summary(modelSw3)
-sumSw3
+res <- model_cleaned$residuals
+SW <- shapiro.test(res)$p.value
+MASS::truehist(res, main = paste("SW=", round(SW, 3)))
+curve(dnorm(x, sd=sd(res)), add = TRUE, col = "red", lwd = 2)
 ```
 
 ```{r}
-model_final <- modelSw3
+bads <- as.numeric(which(abs(res) > 2*sd(res)))
+length(bads)/nrow(Dat_cleaned)
 ```
 
-
-# Residuals' test
-
-```{r}
-res <- model_final$residuals
-MASS::truehist(res, nbins = 20, main = shapiro.test(res)$p.value)
-curve(dnorm(x, sd = sd(res)), add = TRUE)
-```
+Our bads are subset of the leverage/outliers list
 
 ```{r}
-length(res)
+sort(unique(c(leverage,outliers,difft,crooks,covs1,covs2)))
+sort(bads)
 ```
 
 ```{r}
-plot(model_final$fitted.values, res)
-abline(h=c(0, 2*sd(res), -2*sd(res)))
+yhat <- model_cleaned$fitted.values
+plot(yhat, res, xlab = "fitted values", ylab = "residuals")
+abline(h=c(0, 2*sd(res), -2*sd(res)), lty = c(1, 2, 3))
+points(yhat[bads], res[bads], col="red")
+text(yhat[bads]+0.3, res[bads]+0.5, labels = bads, cex = 0.5, col = "red")
 ```
 
 ```{r}
-which( abs(res) > 2*sd(res) )
+summary(model_cleaned)
+```
+
+```{r}
+par(mfrow = c(1,2))
+y <- model_cleaned$fitted.values
+#
+x <- model_cleaned$model$Total.expenditure
+plot(x, y, xlab="Total.expenditure", ylab="Life.expectancy")
+points(x[bads], y[bads], col="red")
+text(x[bads]+0.25, y[bads], labels = bads, col="red", cex = 0.7)
+#
+x <- model_cleaned$model$Adult.Mortality
+plot(x, y, xlab="Adult.Mortality", ylab="Life.expectancy")
+points(x[bads], y[bads], col="red")
+text(x[bads]+30, y[bads], labels = bads, col="red", cex = 0.7)
+
+```
+
+# Final
+
+Here is the model with "bad" points removed
+
+```{r}
+model <- lm(
+  Life.expectancy ~  Alcohol + log_percentage.expenditure + Status + Total.expenditure + Adult.Mortality*HIV.AIDS
+, data = Dat_cleaned[-bads,])
+summary(model)
+```
+
+```{r}
+res = model$residuals
+par(mfrow=c(1,2))
+SW <- shapiro.test(res)$p.value
+MASS::truehist(res, main = paste("SW=", round(SW, 2)))
+curve(dnorm(x, sd=sd(res)), add=TRUE, col="red", lwd=2, lty=1)
+qqnorm(res)
+qqline(res)
+```
+```{r}
+summary(model)
+```
+
+```{r}
+dat <- model$model
+lin_plot <- function(i, res = model$residuals, data = dat) {
+  plot(data[,i], res, xlab = colnames(dat)[i], ylab="residuals")
+  abline(h=0, col = "red")
+}
+par(mfrow = c(2,2))
+for(i in c(2,3,5,6)) {
+  lin_plot(i)
+}
+```
+
+```{r}
+dat <- model$model
+indep_plot <- function(i, res = model$residuals, data = dat) {
+  row_num <- c(1:nrow(dat))
+  sort_x <- sort(data[,i], index.return = TRUE)$ix
+  plot(row_num, res[sort_x], xlab = "row_num", ylab="residuals", main = paste("Residuals sorted by", colnames(data)[i]))
+  abline(h=0, col="red")
+}
+par(mfrow = c(2,2))
+for(i in c(2,3,5,6)) {
+  indep_plot(i)
+}
+```
+```{r}
+sort(data[,2], index.return = TRUE)
 ```
 

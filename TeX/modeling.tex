@@ -9,9 +9,11 @@ In this subsection, we briefly introduce the methods that we used to complete th
 
 Multilinear regression is an extended regression of simple linear regression. It provides more functionalities so that it can support users to predict the response with multiple regressors. In R, the mlr function usually is used with the summary function to display the overall quality of the selected model. In the next few subsections, we will discuss how we implement the stepwise regression, variable transformation, and vif function in our model process.
 
-Additionally, as the first regression model with all predictors, we got the Adjusted R-squared: 0.8615, F-statistic: 52.08 and p-value: < 2.2e-16 by executing the r code below:
+Additionally, as the first regression model with all predictors, we got the Adjusted R-squared: 0.8615, F-statistic: 52.08 and p-value: $< 2.2\times 10^{-16}$ by executing the r code below:
 
+\begin{verbatim}
 summary(lm(Life.expectancy ~ ., data = Dat))
+\end{verbatim}
 
 According to the R output, not all regressors are significant enough to contribute to the prediction model. Thus, in the next steps, we tried to improve the Adjusted R-squared score with the knowledge that we learned in class STAT 5020.
 
@@ -19,27 +21,33 @@ According to the R output, not all regressors are significant enough to contribu
 
 In this subsection, the transformation that we applied to the dataset is described in detail. The transformation fucntion is creted as shown below:
 
-`transform <- function(x, scale) {
+\begin{verbatim}
+transform <- function(x, scale) {
   if(scale == 0) return(log(1 + min(x) + x))
-  else return(x^scale)
-}`
+  else return(x\^scale)
+}
+\end{verbatim}
 
-The function takes two arguments, x as the original input value, and scale as the scaling value to be determined. We have a condition option for the user to choose when scale equals 0, the original input will be calculated as log(1 + min(x) + x); when the scale is given as a number that does not equal to 0, then the transformed input will be x^scale.
+The function takes two arguments, x as the original input value, and scale as the scaling value to be determined. We have a condition option for the user to choose when scale equals 0, the original input will be calculated as log(1 + min(x) + x); when the scale is given as a number that does not equal to 0, then the transformed input will be $x^{scale}$.
 
-The dataset that we used in our project is after the transformation applied on log_infant.deaths, log_percentage.expenditure, log_Measles, log_under.five.deaths, log_GDP, and log_Population.
+The dataset that we used in our project is after the transformation applied on log\_infant.deaths, log\_percentage.expenditure, log\_Measles, log\_under.five.deaths, log\_GDP, and log\_Population.
 
+\begin{verbatim}
 model2 <- lm(Life.expectancy ~ ., data = Dat2)
+\end{verbatim}
 
-Thus, we got the Adjusted R-squared: 0.8775, F-statistic: 59.83 and p-value: < 2.2e-16 from the new model with the new transformed dataset Dat2.
+Thus, we got the Adjusted R-squared: 0.8775, F-statistic: 59.83 and p-value: $< 2.2\times 10^{-16}$ from the new model with the new transformed dataset Dat2.
 
 \subsection{Variance Inflation Factors}
 
-The next step is to check the Variance Inflation Factors to check the collinearity problem, and this step is repeated several times as we finalize the model comparing with the correlation. We removed Hepatitis.B, log_GDP, log_Population, thinness.5.9.years, Income.composition.of.resources, and Schooling after the check. More details will be provided in the evaluation section.
+The next step is to check the Variance Inflation Factors to check the collinearity problem, and this step is repeated several times as we finalize the model comparing with the correlation. We removed Hepatitis.B, log\_GDP, log\_Population, thinness.5.9.years, Income.composition.of.resources, and Schooling after the check. More details will be provided in the evaluation section.
 
+
+\begin{verbatim}
 Dat3 <- Dat2[,-c(7, 15, 16, 18, 19, 20)]
 model3 <- lm(Life.expectancy ~ ., data = Dat3)
-
-The new model showed the Adjusted R-squared: 0.7849, F-statistic:  44.8, and p-value: < 2.2e-16.
+\end{verbatim}
+The new model showed the Adjusted R-squared: 0.7849, F-statistic:  44.8, and p-value: $< 2.2\times 10^{-16}$.
 
 
 \subsection{Stepwise modeling}
@@ -48,30 +56,44 @@ The stepwise model selection approach is a way to iteratively add and/or remove 
 
 \subsection{Bidirection model optimization}
 
+\begin{verbatim}
 DatSw <- Dat2
 DatSw$Status <- ifelse(Dat$Status == "Developing", 0, 1)
 stepwise(DatSw, "Life.expectancy", selection = "bidirection", select = "adjRsq")
+\end{verbatim}
+In library(StepReg), stepwise is a built-in function that provides the functionalities for a user to choose the direction to select the predictors, as well as the criterion. "asjRsq" as adjusted r squared is used to judge if the model is good enough as the predictor selection process goes. During this step, variates "intercept", "Income.composition.of.resources", "Adult.Mortality", "HIV.AIDS", "Total.expenditure", "log\_Measles", "log\_Population", "log\_infant.deaths", "Diphtheria""Schooling" are selected by the order of the improvement of "adjRsq".
 
-In library(StepReg), stepwise is a built-in function that provides the functionalities for a user to choose the direction to select the predictors, as well as the criterion. "asjRsq" as adjusted r squared is used to judge if the model is good enough as the predictor selection process goes. During this step, variates "intercept", "Income.composition.of.resources", "Adult.Mortality", "HIV.AIDS", "Total.expenditure", "log_Measles", "log_Population", "log_infant.deaths", "Diphtheria""Schooling" are selected by the order of the improvement of "adjRsq".
-
-modelSw <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + Total.expenditure + log_Measles + log_Population + log_infant.deaths + Diphtheria + Schooling, data = DatSw)
-
-The model showed the Adjusted R-squared:  0.8828, F-statistic: 131.5 and p-value: < 2.2e-16.
+\begin{verbatim}
+modelSw <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality
+    + HIV.AIDS + Total.expenditure + log_Measles + log_Population 
+    + log_infant.deaths + Diphtheria + Schooling, data = DatSw)
+\end{verbatim}
+The model showed the Adjusted R-squared:  0.8828, F-statistic: 131.5 and p-value: $< 2.2\times 10^{-16}$.
 
 After we get a relatively good model, we choose to use vif function and remove the outliers to optimize the model. Details will be provided separately in the Evaluation section. After we removed the outliers, the model is presented as below:
 
-modelSw2 <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + Total.expenditure + Status + Diphtheria, data = DatSw2)
-
-The Adjusted R-squared of this model is 0.9123. The F-statistic is 254 and the p-value is < 2.2e-16. 
+\begin{verbatim}
+modelSw2 <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + 
+  Total.expenditure + Status + Diphtheria, data = DatSw2)
+\end{verbatim}
+The Adjusted R-squared of this model is 0.9123. The F-statistic is 254 and the p-value is $< 2.2\times 10^{-16}$.
 
 \subsection{interactions}
 
 Interactions are also a critical aspect that we wanted to consider. We firstly consider all the possible interactions that may happen in the model, using the r code below to create a complex model with interactions:
 
-modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources * Adult.Mortality * HIV.AIDS * Total.expenditure * Status * Diphtheria, data = #DatSw2)
-
+\begin{verbatim}
+modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources * Adult.Mortality * 
+HIV.AIDS * Total.expenditure * Status * Diphtheria, data = DatSw2)
+\end{verbatim}
 In this complex model, we got the highest Adjusted R-squared: 0.9193, but it is not a good model for interpreting and it is too complicated for production usage. We consider about the p-value on the threshold around 0.2 to produce the final model below:
 
-modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources + HIV.AIDS + Adult.Mortality*Total.expenditure + Status * Diphtheria, data = DatSw2)
+\begin{verbatim}
+modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources + HIV.AIDS + 
+  Adult.Mortality*Total.expenditure + Status * Diphtheria, data = DatSw2)
+\end{verbatim}
+The Adjusted R-squared of this model is 0.9134. The F-statistic is 193.4 and the p-value is $< 2.2\time 10^{-16}$. We are satisfied with this model as it gives a good Adjusted R-squared as well as a relatively acceptable number of predictors in the model.
 
-The Adjusted R-squared of this model is 0.9134. The F-statistic is 193.4 and the p-value is < 2.2e-16. We are satisfied with this model as it gives a good Adjusted R-squared as well as a relatively acceptable number of predictors in the model.
+%%% Local Variables:
+%%% TeX-master: "main"
+%%% End:
