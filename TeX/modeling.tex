@@ -62,7 +62,7 @@ DatSw$Status <- ifelse(Dat$Status == "Developing", 0, 1)
 stepwise(DatSw, "Life.expectancy", selection = "bidirection", select = "adjRsq")
 \end{verbatim}
 
-In the library(StepReg), stepwise is a built-in function that provides the functionalities for a user to choose the direction to select the predictors, as well as the criterion. "asjRsq" as adjusted r squared is used to judge if the model is good enough as the predictor selection process goes. During this step, variates "Adult.Mortality", "Alcohol", "log_under.five.deaths", "HIV.AIDS","log_percentage.expenditure", "Status", "Total.expenditure", "log\_infant.deaths", "Diphtheria", "BMI" and "thinness..1.19.years" are selected by the order of the improvement of "adjRsq".
+In the library(StepReg), stepwise is a built-in function that provides the functionalities for a user to choose the direction to select the predictors, as well as the criterion. "asjRsq" as adjusted r squared is used to judge if the model is good enough as the predictor selection process goes. During this step, variates "Adult.Mortality", "Alcohol", "log\_under.five.deaths", "HIV.AIDS","log\_percentage.expenditure", "Status", "Total.expenditure", "log\_infant.deaths", "Diphtheria", "BMI" and "thinness..1.19.years" are selected by the order of the improvement of "adjRsq".
 
 \begin{verbatim}
 DatSw <- select(Dat3_, c("Life.expectancy", sw$variate[-1]))

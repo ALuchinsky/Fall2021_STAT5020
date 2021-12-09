@@ -177,6 +177,8 @@ Dat3_$Status <- ifelse(Dat3_$Status == "Developing", 0, 1)
 sw <- stepwise(Dat3_, "Life.expectancy", selection = "bidirection", select = "adjRsq")
 ```
 
+
+
 ```{r}
 DatSw <- select(Dat3_, c("Life.expectancy", sw$variate[-1]))
 modelSw <- lm(Life.expectancy ~ ., data = DatSw)
@@ -253,19 +255,26 @@ head(xxx)
 ```
 
 ```{r}
-vars <- as.character(summary(modelSw)$terms)[[3]] %>% strsplit("\\+") %>% .[[1]] %>% str_trim
-data_int <- filter(xxx, i1 >0 & i2>0)
-data_int$v1 <- vars[data_int$i1]
-data_int$v2 <- vars[data_int$i2]
-data_int_ <- data_int %>% arrange(desc(adjR2)) %>% mutate(v1v2 = paste(v1, v2, sep="*")) 
-data_int_ %>% mutate(R2 = round(R2, 4), adjR2 = round(adjR2, 4)) %>% select(v1v2, R2, adjR2) %>% head(5) 
+R20 <- filter(xxx, i1 == 0)$R2
+adjR20 <- filter(xxx, i1 == 0)$adjR2
 ```
 
 
 ```{r}
-plot(xxx$R2, type = "o", ylim=c(0.785, 0.82), xlim = c(1, 20), xlab = NA, ylab = "R2")
-lines(xxx$adjR2, type = "o", col="red")
-legend("topright", legend = c("R2", "adjR2"), lty = 1, pch=1, col=c("black", "red"))
+vars <- as.character(summary(modelSw)$terms)[[3]] %>% strsplit("\\+") %>% .[[1]] %>% str_trim
+data_int <- filter(xxx, i1 >0 & i2>0)
+data_int$v1 <- vars[data_int$i1]
+data_int$v2 <- vars[data_int$i2]
+data_int$dR2 <- data_int$R2 - R20
+data_int$dadjR2 <- data_int$adjR2 - adjR20
+data_int_ <- data_int %>% arrange(desc(adjR2)) %>% mutate(v1v2 = paste(v1, v2, sep="*")) 
+data_int_ %>% mutate(DeltaR2 = round(dR2, 4), DeltaadjR2 = round(dadjR2, 4)) %>% 
+  select(v1v2, DeltaR2, DeltaadjR2) %>% head(5) 
+```
+
+
+```{r}
+plot(data_int$dadjR2, type = "o", ylim=c(0, 0.02), xlim = c(1, 20), xlab = NA, ylab = "DeltaadjR2")
 ```
 
 ```{r}
@@ -295,6 +304,17 @@ final_model <- lm(Life.expectancy ~
 , data <- DatSw)
 summary(final_model)
 ```
+
+```{r}
+summary(final_model)$coefficients %>% round(4)
+```
+
+
+```{r}
+hat(LE) = 73.1 + 0.3126 Alcohol + 0.4845 log_percentage.expenditure + 3.0819 Status +
+  0.3619 Total.expenditure - 0.0436 Adult.Mortality - 3.9860 + 0.0080 Adult.Mortality*HIV.AIDS
+```
+
 
 This model looks fine
 
@@ -339,6 +359,11 @@ covs1 = covs1,
 covs2 = covs2
 )
 ```
+
+```{r}
+sort(unique(c(covs1, covs2)))
+```
+
 
 ```{r}
 table(c(leverage,
