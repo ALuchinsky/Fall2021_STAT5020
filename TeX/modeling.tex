@@ -27,14 +27,12 @@ According to the R output, not all regressors are significant enough to contribu
 \end{figure}
 
 In this subsection, the transformation that we applied to the dataset is described in detail. In figure \ref{fig:transforms} you can see GDP distribution before and after the log transformation. The transformation function is created as shown below:
-
 \begin{verbatim}
 transform <- function(x, scale) {
   if(scale == 0) return(log(1 + min(x) + x))
-  else return(x\^scale)
+  else return(x^scale)
 }
 \end{verbatim}
-
 The function takes two arguments, x as the original input value, and scale as the scaling value to be determined. We have a condition option for the user to choose when scale equals 0, the original input will be calculated as log(1 + min(x) + x); when the scale is given as a number that does not equal to 0, then the transformed input will be $x^{scale}$.
 
 
@@ -82,19 +80,32 @@ The model showed the Adjusted R-squared:  0.7876, F-statistic: 53.59 and p-value
 
 Then we choose to use vif function and remove the outliers later in the final model for optimization. Details will be provided separately in the Evaluation section. 
 
-\subsection{interactions}
+\subsection{Interactions}
 
-Interactions are also a critical aspect that we wanted to consider. We firstly consider all the possible interactions that may happen between any two variables in the model to choose the best interactions according to the adjusted R squared value. The combination that we picked was Adult.Mortality*HIV.AIDS, and we only keep this combo to make our model more interpretable. The R code below is used to identify the best interaction.
+% latex table generated in R 4.0.3 by xtable 1.8-4 package
+% Thu Dec  9 18:45:49 2021
+% latex table generated in R 4.0.3 by xtable 1.8-4 package
+% Thu Dec  9 18:50:34 2021
+% latex table generated in R 4.0.3 by xtable 1.8-4 package
+% Thu Dec  9 18:51:17 2021
+\begin{table}[ht]
+\centering
+\begin{tabular}{rlrr}
+  \hline
+ & v1v2 & $\Delta R^2$ & $\Delta adjR^2$ \\ 
+  \hline
+1 & Adult.Mortality*HIV.AIDS & 0.01650 & 0.01640 \\ 
+  2 & Adult.Mortality*log\_under.five.deaths & 0.00680 & 0.00590 \\ 
+  3 & Status*Diphtheria & 0.00680 & 0.00590 \\ 
+  4 & Adult.Mortality*Total.expenditure & 0.00680 & 0.00580 \\ 
+  5 & Adult.Mortality*log\_infant.deaths & 0.00660 & 0.00570 \\ 
+   \hline
+\end{tabular}
+\caption{Effects of variable interaction} 
+\label{tab:int}
+\end{table}
 
-\begin{verbatim}
-vars <- as.character(summary(modelSw)$terms)[[3]] %>% strsplit("\\+") %>% .[[1]] %>% str_trim
-data_int <- filter(xxx, i1 >0 & i2>0)
-data_int$v1 <- vars[data_int$i1]
-data_int$v2 <- vars[data_int$i2]
-data_int_ <- data_int %>% arrange(desc(adjR2)) %>% mutate(v1v2 = paste(v1, v2, sep="*")) 
-data_int_ %>% mutate(R2 = round(R2, 4), adjR2 = round(adjR2, 4)) %>% select(v1v2, R2, adjR2) %>% head(5) 
-\end{verbatim}
-
+Interactions are also a critical aspect that we wanted to consider. We have written a sinple R function, that acts like a forrward stepwise function. It probes all possible inteactions between two variables and takes the combination that produces the largest increase for the adjusted R2 metric. In table \ref{tab:int} you can see best 5 best variants and it is clear that  Adult.Mortality*HIV.AIDS one should be used to make our model more interpretable. As a result our final model is defined as
 \begin{verbatim}
 final_model <- lm(Life.expectancy ~ 
    Alcohol + log_percentage.expenditure + Status + Total.expenditure + Adult.Mortality*HIV.AIDS

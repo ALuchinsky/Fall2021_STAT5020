@@ -274,9 +274,16 @@ find_best_int <- function(mod, exclude = c()) {
 Searching for best interaction combinations
 
 ```{r}
+library(xtable)
+```
+
+
+```{r}
 xxx <- find_best_int(modelSw)
 head(xxx)
 ```
+
+
 
 ```{r}
 R20 <- filter(xxx, i1 == 0)$R2
@@ -293,13 +300,18 @@ data_int$dR2 <- data_int$R2 - R20
 data_int$dadjR2 <- data_int$adjR2 - adjR20
 data_int_ <- data_int %>% arrange(desc(adjR2)) %>% mutate(v1v2 = paste(v1, v2, sep="*")) 
 data_int_ %>% mutate(DeltaR2 = round(dR2, 4), DeltaadjR2 = round(dadjR2, 4)) %>% 
-  select(v1v2, DeltaR2, DeltaadjR2) %>% head(5) 
+  select(v1v2, DeltaR2, DeltaadjR2)  -> short_int_table
+short_int_table  %>% head(5)
 ```
 
 
 ```{r}
 plot(data_int$dadjR2, type = "o", ylim=c(0, 0.02), xlim = c(1, 20), xlab = NA, ylab = "DeltaadjR2")
 ```
+```{r}
+short_int_table %>% head(5) %>% xtable(digits = 5, caption = "Effects of variable interaction", label = "tab:int")
+```
+
 
 ```{r}
 library(ggplot2)
