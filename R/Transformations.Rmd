@@ -65,6 +65,30 @@ Dat2 <- Dat
 ```
 
 ```{r}
+library(ggplot2)
+```
+
+```{r}
+
+f1<-data.frame(Dat) %>% ggplot(aes(y=Life.expectancy, x = GDP)) + geom_point()
+f2 <- data.frame(Dat) %>% mutate(log_GDP = transform(GDP, 0)) %>% 
+  ggplot(aes(y=Life.expectancy, x = log_GDP)) + geom_point()
+g <- gridExtra::grid.arrange(f1, f2, ncol=2)
+ggsave("../TeX/figures/transforms.pdf", g)
+```
+
+
+```{r}
+names <- colnames(Dat)
+i <- 15
+s <- 0
+par(mfrow = c(1,2))
+plot(Dat[,i], Dat[,i0], xlab = names[i], ylab=names[i0])
+plot(transform(Dat[,i],s), Dat[,i0], xlab = paste("log_",names[i],sep=""), ylab=names[i0])
+```
+
+
+```{r}
 i <- 4
 s <- 0
 plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])

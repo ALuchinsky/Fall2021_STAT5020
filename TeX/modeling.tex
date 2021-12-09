@@ -19,7 +19,14 @@ According to the R output, not all regressors are significant enough to contribu
 
 \subsection{Data Transformation}
 
-In this subsection, the transformation that we applied to the dataset is described in detail. The transformation fucntion is created as shown below:
+\begin{figure}
+  \centering
+  \includegraphics[width = 0.8\textwidth]{figures/transforms}
+  \caption{Scatter plots of the GDP vs Life.expectancy variable before and after the transformation}
+  \label{fig:transforms}
+\end{figure}
+
+In this subsection, the transformation that we applied to the dataset is described in detail. In figure \ref{fig:transforms} you can see GDP distribution before and after the log transformation. The transformation function is created as shown below:
 
 \begin{verbatim}
 transform <- function(x, scale) {
@@ -29,6 +36,8 @@ transform <- function(x, scale) {
 \end{verbatim}
 
 The function takes two arguments, x as the original input value, and scale as the scaling value to be determined. We have a condition option for the user to choose when scale equals 0, the original input will be calculated as log(1 + min(x) + x); when the scale is given as a number that does not equal to 0, then the transformed input will be $x^{scale}$.
+
+
 
 The dataset that we used in our project is after the transformation applied on log\_infant.deaths, log\_percentage.expenditure, log\_Measles, log\_under.five.deaths, log\_GDP, and log\_Population.
 
