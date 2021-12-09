@@ -19,7 +19,7 @@ According to the R output, not all regressors are significant enough to contribu
 
 \subsection{Data Transformation}
 
-In this subsection, the transformation that we applied to the dataset is described in detail. The transformation fucntion is creted as shown below:
+In this subsection, the transformation that we applied to the dataset is described in detail. The transformation fucntion is created as shown below:
 
 \begin{verbatim}
 transform <- function(x, scale) {
@@ -61,38 +61,44 @@ DatSw <- Dat2
 DatSw$Status <- ifelse(Dat$Status == "Developing", 0, 1)
 stepwise(DatSw, "Life.expectancy", selection = "bidirection", select = "adjRsq")
 \end{verbatim}
-In library(StepReg), stepwise is a built-in function that provides the functionalities for a user to choose the direction to select the predictors, as well as the criterion. "asjRsq" as adjusted r squared is used to judge if the model is good enough as the predictor selection process goes. During this step, variates "intercept", "Income.composition.of.resources", "Adult.Mortality", "HIV.AIDS", "Total.expenditure", "log\_Measles", "log\_Population", "log\_infant.deaths", "Diphtheria""Schooling" are selected by the order of the improvement of "adjRsq".
+
+In the library(StepReg), stepwise is a built-in function that provides the functionalities for a user to choose the direction to select the predictors, as well as the criterion. "asjRsq" as adjusted r squared is used to judge if the model is good enough as the predictor selection process goes. During this step, variates "Adult.Mortality", "Alcohol", "log_under.five.deaths", "HIV.AIDS","log_percentage.expenditure", "Status", "Total.expenditure", "log\_infant.deaths", "Diphtheria", "BMI" and "thinness..1.19.years" are selected by the order of the improvement of "adjRsq".
 
 \begin{verbatim}
-modelSw <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality
-    + HIV.AIDS + Total.expenditure + log_Measles + log_Population 
-    + log_infant.deaths + Diphtheria + Schooling, data = DatSw)
+DatSw <- select(Dat3_, c("Life.expectancy", sw$variate[-1]))
+modelSw <- lm(Life.expectancy ~ ., data = DatSw)
 \end{verbatim}
-The model showed the Adjusted R-squared:  0.8828, F-statistic: 131.5 and p-value: $< 2.2\times 10^{-16}$.
 
-After we get a relatively good model, we choose to use vif function and remove the outliers to optimize the model. Details will be provided separately in the Evaluation section. After we removed the outliers, the model is presented as below:
+The model showed the Adjusted R-squared:  0.7876, F-statistic: 53.59 and p-value: $< 2.2\times 10^{-16}$. The adjusted R squared is expected to decrease since we now keep fewer variables in the current fitted model.
 
-\begin{verbatim}
-modelSw2 <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + 
-  Total.expenditure + Status + Diphtheria, data = DatSw2)
-\end{verbatim}
-The Adjusted R-squared of this model is 0.9123. The F-statistic is 254 and the p-value is $< 2.2\times 10^{-16}$.
+Then we choose to use vif function and remove the outliers later in the final model for optimization. Details will be provided separately in the Evaluation section. 
 
 \subsection{interactions}
 
-Interactions are also a critical aspect that we wanted to consider. We firstly consider all the possible interactions that may happen in the model, using the r code below to create a complex model with interactions:
+Interactions are also a critical aspect that we wanted to consider. We firstly consider all the possible interactions that may happen between any two variables in the model to choose the best interactions according to the adjusted R squared value. The combination that we picked was Adult.Mortality*HIV.AIDS, and we only keep this combo to make our model more interpretable. The R code below is used to identify the best interaction.
 
 \begin{verbatim}
-modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources * Adult.Mortality * 
-HIV.AIDS * Total.expenditure * Status * Diphtheria, data = DatSw2)
+vars <- as.character(summary(modelSw)$terms)[[3]] %>% strsplit("\\+") %>% .[[1]] %>% str_trim
+data_int <- filter(xxx, i1 >0 & i2>0)
+data_int$v1 <- vars[data_int$i1]
+data_int$v2 <- vars[data_int$i2]
+data_int_ <- data_int %>% arrange(desc(adjR2)) %>% mutate(v1v2 = paste(v1, v2, sep="*")) 
+data_int_ %>% mutate(R2 = round(R2, 4), adjR2 = round(adjR2, 4)) %>% select(v1v2, R2, adjR2) %>% head(5) 
 \end{verbatim}
-In this complex model, we got the highest Adjusted R-squared: 0.9193, but it is not a good model for interpreting and it is too complicated for production usage. We consider about the p-value on the threshold around 0.2 to produce the final model below:
 
 \begin{verbatim}
-modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources + HIV.AIDS + 
-  Adult.Mortality*Total.expenditure + Status * Diphtheria, data = DatSw2)
+final_model <- lm(Life.expectancy ~ 
+   Alcohol + log_percentage.expenditure + Status + Total.expenditure + Adult.Mortality*HIV.AIDS
+, data <- DatSw)
 \end{verbatim}
-The Adjusted R-squared of this model is 0.9134. The F-statistic is 193.4 and the p-value is $< 2.2\time 10^{-16}$. We are satisfied with this model as it gives a good Adjusted R-squared as well as a relatively acceptable number of predictors in the model.
+
+We got the Adjusted R-squared: 0.804 with the added interaction in the model, and after removing the variables that are not significant, we got Adjusted R-squared: 0.7959, F-statistic: 87.89 and p-value: $< 2.2\times 10^{-16}$. The outliers are taken care of in the last step and will be explained in the Evaluation section separately. The final model we got is shown below with the Adjusted R-squared 0.7959, F-statistic 87.89, and the p-value $< 2.2\time 10^{-16}$. We are satisfied with this model as it gives a good Adjusted R-squared as well as a relatively acceptable number of predictors in the model.
+
+\begin{verbatim}
+model_cleaned <- lm(
+  Life.expectancy ~  Alcohol + log_percentage.expenditure + Status + Total.expenditure + Adult.Mortality*HIV.AIDS
+, data = Dat_cleaned)
+\end{verbatim}
 
 %%% Local Variables:
 %%% TeX-master: "main"
