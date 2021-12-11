@@ -4,7 +4,7 @@
 \subsection{Multicollinearity}
 \label{sec:multicollinearity}
 Multicollinearity among the regressor variables was checked and those with high variable inflation factor or VIF were removed. The VIF of a variable is the ratio of the variance of the overall model to the variance of a model with only that variable. A VIF greater than 4 indicates moderate multicollinearity and a VIF greater than 10 indicates severe multicollinearity. The regressor variables of Hepatitis.B, transformed logGDP, logPopulation, thinness.5.9.years, Income.composition.of.resources, and, Schooling were removed because these had greater than 4 VIF, and their p-value in the model summary indicated lower significance. 
-After removing these variables, the model was fitted and again the VIF and the Pearson correlation coefficients for the variables were calculated. The regressor variables: log_under.five.deaths, and log_infant.deaths again had very high VIF and these were taken care of later while considering the interactions between the regressors.
+After removing these variables, the model was fitted and again the VIF and the Pearson correlation coefficients for the variables were calculated. The regressor variables: log\_under.five.deaths, and log\_infant.deaths again had very high VIF and these were taken care of later while considering the interactions between the regressors.
 
 \subsection{Identification of Influential Points}
 \label{sec:influential-points}
@@ -38,23 +38,21 @@ In the figure \ref{fig:independence}, the residual errors are plotted against th
 
 \subsection{Normality in the Distribution of Error Terms}
 \label{sec:normality}
-As can be seen from the figure \ref{fig:normality} showing the Q-Q plot, the points approximately fall on a straight line, which supports the assumption of normality between error terms.
 
 \begin{figure}
   \centering
-  \includegraphics[width = 0.9\textwidth]{figures/normality.PNG}
+  \includegraphics[width = 0.45\textwidth]{figures/normality.PNG}
+  \includegraphics[width = 0.45\textwidth]{figures/Shapiro.PNG}
   \caption{Normal Q-Q plot}
   \label{fig:normality}
 \end{figure} 
 
-The Shapiro-Wilk test was also conducted to check for the normal distribution of the error terms where the null hypothesis is that the errors follow a normal distribution. As shown in the figure \ref{fig:shapiro}The p-value obtained from the test was 0.77 which is greater than the \textit{alpha} of 0.05. Hence, we failed to reject the null hypothesis and thus it was found that the error terms follow the normal distribution. 
 
-\begin{figure}
-  \centering
-  \includegraphics[width = 0.9\textwidth]{figures/Shapiro.PNG}
-  \caption{Plot for error terms with p-value from Shapiro-Wilk test}
-  \label{fig:shapiro}
-\end{figure}
+As can be seen from the left panel of figure \ref{fig:normality} showing the Q-Q plot, the points approximately fall on a straight line, which supports the assumption of normality between error terms.
+
+
+The Shapiro-Wilk test was also conducted to check for the normal distribution of the error terms where the null hypothesis is that the errors follow a normal distribution. As shown in the right panel of  figure \ref{fig:normality}. The p-value obtained from the test was 0.77 which is greater than the \textit{alpha} of 0.05. Hence, we failed to reject the null hypothesis and thus it was found that the error terms follow the normal distribution. 
+
 
 
 
