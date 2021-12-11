@@ -108,17 +108,19 @@ Then we choose to use vif function and remove the outliers later in the final mo
 Interactions are also a critical aspect that we wanted to consider. We have written a sinple R function, that acts like a forrward stepwise function. It probes all possible inteactions between two variables and takes the combination that produces the largest increase for the adjusted R2 metric. In table \ref{tab:int} you can see best 5 best variants and it is clear that  Adult.Mortality*HIV.AIDS one should be used to make our model more interpretable. As a result our final model is defined as
 \begin{verbatim}
 final_model <- lm(Life.expectancy ~ 
-   Alcohol + log_percentage.expenditure + Status + Total.expenditure + Adult.Mortality*HIV.AIDS
-, data <- DatSw)
+   Alcohol + log_percentage.expenditure + Status + Total.expenditure 
+   + Adult.Mortality*HIV.AIDS, data <- DatSw)
 \end{verbatim}
 
-We got the Adjusted R-squared: 0.804 with the added interaction in the model, and after removing the variables that are not significant, we got Adjusted R-squared: 0.7959, F-statistic: 87.89 and p-value: $< 2.2\times 10^{-16}$. The outliers are taken care of in the last step and will be explained in the Evaluation section separately. The final model we got is shown below with the Adjusted R-squared 0.7959, F-statistic 87.89, and the p-value $< 2.2\time 10^{-16}$. We are satisfied with this model as it gives a good Adjusted R-squared as well as a relatively acceptable number of predictors in the model.
+We got the Adjusted R-squared: 0.804 with the added interaction in the model, and after removing the variables that are not significant, we got Adjusted R-squared: 0.7959, F-statistic: 87.89 and p-value: $< 2.2\times 10^{-16}$. The outliers are taken care of in the last step and will be explained in the Evaluation section separately.
+% The final model we got is shown below with the Adjusted R-squared 0.7959, F-statistic 87.89, and the p-value $< 2.2\time 10^{-16}$. We are satisfied with this model as it gives a good Adjusted R-squared as well as a relatively acceptable number of predictors in the model.
 
-\begin{verbatim}
-model_cleaned <- lm(
-  Life.expectancy ~  Alcohol + log_percentage.expenditure + Status + Total.expenditure + Adult.Mortality*HIV.AIDS
-, data = Dat_cleaned)
-\end{verbatim}
+% \begin{verbatim}
+% model_cleaned <- lm(
+%   Life.expectancy ~  Alcohol + log_percentage.expenditure + Status +
+%    Total.expenditure + Adult.Mortality*HIV.AIDS
+% , data = Dat_cleaned)
+% \end{verbatim}
 
 %%% Local Variables:
 %%% TeX-master: "main"
