@@ -10,7 +10,7 @@ Table 4 contains the relevant variables of the final model. The final model equa
 hat(LE) = 73.1 + 0.3126 Alcohol + 
        0.4845 log_percentage.expenditure + 
        3.0819 Status + 0.3619 Total.expenditure - 
-       0.0436 Adult.Mortality - 3.9860 + 0.0080 Adult.Mortality*HIV.AIDS
+       0.0436 Adult.Mortality - 3.9860*HIV.AIDS + 0.0080 Adult.Mortality*HIV.AIDS
 \end{verbatim}
 
 
@@ -37,7 +37,7 @@ hat(LE) = 73.1 + 0.3126 Alcohol +
 \label{tab:missing}
 \end{table}
 
-It came as a surprise that GDP was not present in the final model, but upon further investigation of the detailed description of the variables, it can be seen that GDP is encapsulated in the "Percent Expenditure" variable. 
+It came as a surprise that GDP was not present in the final model, but upon further investigation of the detailed description of the variables, it can be seen that GDP is encapsulated in the "Percent Expenditure" variable. Other factors impact the model in the following ways. For every doubling of the percent expenditure, the life expectancy will increase additively by 0.4845*log2. When the Status variable changes developing to developed, the life expectancy will increase by 3.0819 years. For the variables Alcohol, Total.expenditure, Adult mortality, and HIV.AIDS the life expectancy will increase/decrease respectively by 0.3126, 0.3619, 0.0436, and -3.9860 for each unit increase in the affected variable. There is a slight increase in life expectancy that can be attributed to the interaction between Adult.Mortality and HIV.AIDS.
 
 With much attention paid to life expectancy over the last 100 years or so, there has been a two-fold increase in life expectancy worldwide. Differences do exist between countries of the world and can even be seen in various regions within countries. Government policies, the wealth of a country, and habits of the population can certainly influence the longevity of a population. The current COVID-19 pandemic certainly showcases the gap in resources between countries and their public health policies. 
 
