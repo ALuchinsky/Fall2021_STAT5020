@@ -2,4 +2,48 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
+The initial model obtained with the inclusion of all variables including log transformations of select variables produced an Rsquared value of 0.89. The final model contained significantly fewer variables and gave an Rsquared value of 0.86. This small reduction in the Rsquared value is a small price to pay to reduce the complexity of the model.
+
+Table 4 contains the relevant variables of the final model. The final model equation is:
+
+\begin{verbatim}
+hat(LE) = 73.1 + 0.3126 Alcohol + 
+       0.4845 log_percentage.expenditure + 
+       3.0819 Status + 0.3619 Total.expenditure – 
+       0.0436 Adult.Mortality - 3.9860 + 0.0080 Adult.Mortality*HIV.AIDS
+\end{verbatim}
+
+
+
+% latex table generated in R 4.0.3 by xtable 1.8-4 package
+% Fri Nov 26 11:47:04 2021
+\begin{table}[ht]
+\centering
+\begin{tabular}{@{}p{0.1\linewidth}  p{0.3\linewidth}p{0.5\linewidth}p{0.1\linewidth}@{}}
+  \toprule
+ & Variable & Description \\ 
+  \midrule
+
+1 & Status & Developed or Developing status \\ 
+  2 & Adult Mortality &  Adult Mortality Rates of both sexes (probability of dying between 15 and 60 years per 1000 population) \\ 
+  3 & HIV.AIDS &  Deaths per 1 000 live births HIV/AIDS (0-4 years) \\ 
+  4 & Percent Expenditure &  Expenditure on health as a percentage of Gross Domestic Product per capita\\ 
+  5 & Total Expenditure &  General government expenditure on health as a percentage of total government expenditure \\ 
+ 6 & Alcohol &  Alcohol, recorded per capita (15+) consumption (in litres of pure alcohol)\\
+
+\bottomrule
+\end{tabular}
+\caption{Final Model Variables}
+\label{tab:missing}
+\end{table}
+
+It came as a surprise that GDP was not present in the final model, but upon further investigation of the detailed description of the variables, it can be seen that GDP is encapsulated in the "Percent Expenditure" variable. 
+
+With much attention paid to life expectancy over the last 100 years or so, there has been a two-fold increase in life expectancy worldwide. Differences do exist between countries of the world and can even be seen in various regions within countries. Government policies, the wealth of a country, and habits of the population can certainly influence the longevity of a population. The current COVID-19 pandemic certainly showcases the gap in resources between countries and their public health policies. 
+
+While this particular model only considered one particular year in time, further study is necessary to determine if the model is valid over multiple years. It is also possible that with the current global pandemic, the world will experience a decline in the average life expectancy.
+
+
+
+
 % ## adjusted r^2 

@@ -3,7 +3,7 @@
 
 \subsection{Multicollinearity}
 \label{sec:multicollinearity}
-Multicollinearity among the regressor variables was checked and those with high variable inflation factor or VIF were removed. The VIF of a variable is the ratio of the variance of the overall model to the variance of a model with only that variable. A VIF greater than 4 indicates moderate multicollinearity and a VIF greater than 10 indicates severe multicollinearity. The regressor variables of Hepatitis.B, transformed logGDP, logPopulation, thinness.5.9.years, Income.composition.of.resources, and, Schooling were removed because these had greater than 4 VIF, and their p-value in the model summary indicated lower significance. 
+Multicollinearity among the regressor variables was checked and those with high variable inflation factor or VIF were removed. The VIF of a variable is the ratio of the variance of the overall model to the variance of a model with only that variable. A VIF greater than 4 indicates moderate multicollinearity and a VIF greater than 10 indicates severe multicollinearity. The regressor variables of Hepatitis.B, transformed logGDP, logPopulation, thinness.5.9.years, Income.composition.of.resources, and, Schooling were removed because they had greater than 4 VIF, and their p-value in the model summary indicated lower significance. 
 After removing these variables, the model was fitted and again the VIF and the Pearson correlation coefficients for the variables were calculated. The regressor variables: log\_under.five.deaths, and log\_infant.deaths again had very high VIF and these were taken care of later while considering the interactions between the regressors.
 
 \subsection{Identification of Influential Points}

@@ -1,0 +1,289 @@
+---
+title: "Transformation"
+author: "Alexey Luchinsky"
+date: "11/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list = ls())
+library(dplyr)
+```
+
+```{r}
+year <- 2014
+```
+
+```{r}
+Dat <- read.csv(paste("../data/processed/prepared_data_",year,".csv", sep=""))
+str(Dat)
+```
+
+Removing unused components:
+
+```{r}
+sum(!complete.cases(Dat))
+```
+
+
+```{r}
+Dat <- Dat[,-c(1,2,3)]
+str(Dat)
+```
+
+The initial model
+
+```{r}
+sum <- summary(lm(Life.expectancy ~ ., data = Dat))
+r20 <- sum$r.squared
+sum
+```
+
+
+```{r}
+ncol(Dat)
+```
+
+```{r}
+transform <- function(x, scale) {
+  if(scale == 0) return(log(1 + min(x) + x))
+  else return(x^scale)
+}
+```
+
+
+```{r}
+i0 <- 2
+Dat2 <- Dat
+```
+
+
+```{r}
+i <- 4
+s <- 0
+plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])
+Dat2[,i] <- transform(Dat[,i],s)
+colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
+```
+
+```{r}
+i <- 6
+s <- 0
+plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])
+Dat2[,i] <- transform(Dat[,i],s)
+colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
+```
+
+```{r}
+i <- 8
+s <- 0
+plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])
+Dat2[,i] <- transform(Dat[,i],s)
+colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
+```
+
+```{r}
+i <- 10
+s <- 0
+plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])
+Dat2[,i] <- transform(Dat[,i],s)
+colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
+```
+
+```{r}
+i <- 15
+s <- 0
+plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])
+Dat2[,i] <- transform(Dat[,i],s)
+colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
+```
+
+```{r}
+i <- 16
+s <- 0
+plot(transform(Dat[,i],s), Dat[,i0], xlab = colnames(Dat)[i])
+Dat2[,i] <- transform(Dat[,i],s)
+colnames(Dat2)[i] <- paste("log_", colnames(Dat)[i],sep="")
+```
+
+```{r}
+plot(log(Dat[,16]), Dat[,2], xlab = colnames(Dat)[16], ylab = colnames(Dat)[2])
+```
+
+
+```{r}
+colnames(Dat2)
+```
+
+
+```{r}
+model2 <- lm(Life.expectancy ~ ., data = Dat2)
+summary(model2)
+```
+
+```{r}
+library(car)
+vif(model2)
+```
+
+```{r}
+for(i in 1:ncol(Dat2))
+  print(paste(i, colnames(Dat2)[i]))
+```
+
+
+```{r}
+Dat3 <- Dat2[,-c(7, 15, 16, 18, 19, 20)]
+model3 <- lm(Life.expectancy ~ ., data = Dat3)
+summary(model3)
+```
+
+```{r}
+vif(model3)
+```
+
+```{r}
+#cbind(1:ncol(Dat2), colnames(Dat2))
+as.matrix(colnames(Dat3))
+```
+
+```{r}
+round(cor(Dat3[,-c(1,2)]) , 2)
+```
+
+
+
+```{r}
+library(StepReg)
+```
+
+```{r}
+str(Dat2)
+```
+
+
+```{r}
+DatSw <- Dat2
+DatSw$Status <- ifelse(Dat$Status == "Developing", 0, 1)
+stepwise(DatSw, "Life.expectancy", selection = "bidirection", select = "adjRsq")
+
+modelSw <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + Total.expenditure + log_Measles + log_Population + log_infant.deaths + Diphtheria + Schooling, data = DatSw)
+summary(modelSw)
+```
+
+# Removing outliers
+
+```{r}
+k = 6
+n = 157
+
+#hatvalues(modelSw) #High leverage if hatvalue > 2*(k+1)/n
+leverage <- as.vector( which(hatvalues(modelSw) > (2*(k+1)/n))) #
+```
+
+```{r}
+#rstandard(modelSw) #outlier if abs(rstandard) > 3
+#which(abs(rstandard(modelSw)) > 3) # Obs 16 127 is flagged
+#rstudent(modelSw) #outlier if abs(rstudent) > 3
+outliers <- as.vector(which(abs(rstudent(modelSw)) > 3)) # Obs 16 127 is flagged
+```
+
+
+
+```{r}
+#dffits(modelSw) #influential if abs(dffits) > 2*sqrt((k+2)/(n-k-2))
+difft <- as.vector(which(abs(dffits(modelSw)) > (2*sqrt((k+2)/(n-k-2))))) # Obs 16 48 127 are flagged
+```
+
+```{r}
+#cooks.distance(modelSw) #influential if d > 1
+crooks <- as.vector(which(cooks.distance(modelSw) > 1)) #
+```
+
+```{r}
+#covratio(modelSw) #influential if covratio > 1 + 3*(k+1)/n OR covratio < 1 - 3*(k+1)/n
+covs1 <- as.vector(which(covratio(modelSw) > (1 + 3*(k+1)/n))) #
+covs2 <- as.vector(which(covratio(modelSw) < (1 - 3*(k+1)/n))) # Obs 127 are flagged
+```
+
+```{r}
+leverage
+outliers
+difft
+crooks
+covs1
+covs2
+```
+
+```{r}
+table(c(leverage,
+outliers,
+difft,
+crooks,
+covs1,
+covs2))
+
+```
+
+```{r}
+DatSw2 <- Dat[-c(16, 81, 127,  4,  32,  46,  54,  58,  74, 114 ),]
+modelSw2 <- lm(Life.expectancy ~ Income.composition.of.resources + Adult.Mortality + HIV.AIDS + Total.expenditure + Status + Diphtheria, data = DatSw2)
+summary(modelSw2)
+```
+
+```{r}
+summary(modelSw)
+```
+
+
+## Interactions
+
+```{r}
+modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources * Adult.Mortality * HIV.AIDS * Total.expenditure * Status * Diphtheria, data = DatSw2)
+sumSw3 <- summary(modelSw3)
+sumSw3
+```
+
+
+```{r}
+#pvals = sumSw3$coefficients[,4]
+#pvals[pvals < 0.2]
+```
+
+
+```{r}
+modelSw3 <- lm(Life.expectancy ~ Income.composition.of.resources + HIV.AIDS + Adult.Mortality*Total.expenditure   + Status * Diphtheria, data = DatSw2)
+sumSw3 <- summary(modelSw3)
+sumSw3
+```
+
+```{r}
+model_final <- modelSw3
+```
+
+
+# Residuals' test
+
+```{r}
+res <- model_final$residuals
+MASS::truehist(res, nbins = 20, main = shapiro.test(res)$p.value)
+curve(dnorm(x, sd = sd(res)), add = TRUE)
+```
+
+```{r}
+length(res)
+```
+
+```{r}
+plot(model_final$fitted.values, res)
+abline(h=c(0, 2*sd(res), -2*sd(res)))
+```
+
+```{r}
+which( abs(res) > 2*sd(res) )
+```
+

@@ -4,7 +4,7 @@
 \subsection{Data Description}
 \label{sec:data-description}
 
-In this project, we have selected the Global Health Observatory (GHO) data repository under the World Health Organization (WHO) dataset \cite{WHO}.  We considered the data from 2000 to 2015 for 193 countries, in total 2938 rows available for statistical analysis. For each country and year 22 fields are stored. The detailed description of these fileds is presented in table \ref{tab:description}. For our analysis we will use only 2014 year case, so we restricted ourselves to this subset of the original table. It turns out that there are 183 records in the restricted table, which seems to be large enough for the analysis.
+In this project, the Global Health Observatory (GHO) data repository under the World Health Organization (WHO) dataset \cite{WHO} was selected.  The data from 2000 to 2015 for 193 countries, in total 2938 rows available was selected for statistical analysis. For each country and year 22 fields are stored. The detailed description of the fileds is presented in table \ref{tab:description}. For the analysis, only the year 2014 was selected for use from the original table. There were 183 records available in the restricted table, which seems to be large enough for the scope of this analysis.
 
 \begin{table}
   \centering
@@ -39,12 +39,12 @@ In this project, we have selected the Global Health Observatory (GHO) data repos
 \end{table}
 
 
-As you can see, most of the regressors in the data set are numerical and can be used in the analysis without modifications. There are two regressors, that are not: Status and Country. The first one describes the status of the country and can take two values: ``Developing'' (151 rows) and ``Developed''. This variable was interpreted as factored. As for the second one, country, we decided not to use it in the analysis directly, but, as it will be explained later, it will be helpful to some of the missing values.
+As shown in Table 1, most of the regressors in the data set are numerical and can be used in the analysis without modifications. Two regressors are not: Status and Country. The first describes the status of the country and can take two values: ``Developing'' (151 rows) and ``Developed''. This variable was interpreted as a factor. As for the second one, country, was not used in the analysis directly, but, as explained later, was helpful to use other data sources to get the missing values.
 
 \subsection{Missing Data}
 \label{sec:missing-data}
 
-In table \ref{tab:missing} we present the information about the missing data in each column of 2014 year data subset. As you can see for almost all of the variables the number of missing data seems to be reasonable. It is not true, unfortunately, for two of them: Population and GDP (i.e. Gross Domestic Product per capita). The number of problematic rows in this case is large, so we should find a way to restore the missing values.
+In table \ref{tab:missing}, information about the missing data in each column of 2014 year data subset is presented. For almost all of the variables, the number of missing data seems to be reasonable. Unfortunately, for two of them, this was not the case: Population and Gross Domestic Product (GDP). The number of problematic rows in this case was large, so a method to restore the missing values was found.
 
 % latex table generated in R 4.0.3 by xtable 1.8-4 package
 % Fri Nov 26 11:47:04 2021
@@ -70,11 +70,11 @@ In table \ref{tab:missing} we present the information about the missing data in 
 \label{tab:missing}
 \end{table}
 
-Let us consider the Population variable first. It turns out, that for 49 countries for some years data about the population in the WHO table is missing: Cook Islands, Dominica, Marshall Islands, Monaco, Nauru, Niue, Saint Kitts and Nevis, and San Marino have only one missing record each; Eritrea has for misses; and 40 other countries (including USA and Great Britain) do not have any information about the population at all.
+The Population variable was considered first. The WHO table was missing data for the populationt for 49 countries. Cook Islands, Dominica, Marshall Islands, Monaco, Nauru, Niue, Saint Kitts and Nevis, and San Marino were missing one record each; Eritrea had four missing; and 40 other countries (including USA and Great Britain) did not have any information about the population at all.
 
-It is clear that it is not possible to exclude from the analysis such a large amount of data, so it is highly desirable to find some other source for the missing information. For our future work we selected the table, downloaded from the site \cite{WB}, in which the population for all the years and countries under consideration can be found(in the following it will be referred to as WB table). Some technical work required to import this information into the WHO data set. The reason is the exact spelling of the names of some countries in these two data sets was different. For example, USA in the WHO table was referred to as "United States of America", while in WB table it was named "United States", the other example is "United Kingdom of Great Britain and Northern Ireland" vs simple "United Kingdom".  In total there were 32 such disagreements.
+It iseemed not prudent to exclude such a large amount of data from the analysis, so other source for the missing information was found. The site \cite{WB}, contained the population values for all the years and countries under consideration (in the following it will be referred to as WB table). Some technical work was required to import this information into the WHO data set. A key column had to be massaged into the correct format for the country as the exact spelling of the names of some countries in the two data sets was different. For example, USA in the WHO table was referred to as "United States of America", while in WB table it was named "United States", another example is "United Kingdom of Great Britain and Northern Ireland" vs simple "United Kingdom".  In total, there were 32 such disagreements.
 
-The other important question is what to do with the countries with population data presented both WHO and WB tables, which data source is more reliable? In figure \ref{fig:afghanistan_pop_comparison} Afghanistan population from two data sets is shown. It is clear, that the WHO results does not make any sence: for some years we can observe 2 or 3 order of magnitude leaps. The WB results, on the other hand, are stable, so in the following we will use this table for all countries under consideration.
+While comparing the information contained in the population field, it was discoverd that some of the existing data in the WHO dataset did not correspond with the values existing in the WB dataset. A question arose: which data source is more reliable? In figure \ref{fig:afghanistan_pop_comparison} Afghanistan population from two data sets is shown. It became evident that the WHO field for population was error prone. Some years, values of 2 or 3 order of magnitude leaps were found. The WB results, on the other hand, seemed more stable. A determination was made to rely upon the WB population data for all countries under consideration.
 
 
 \begin{figure}
@@ -84,9 +84,9 @@ The other important question is what to do with the countries with population da
   \label{fig:afghanistan_pop_comparison}
 \end{figure}
 
-Almost the same can be said also about the Gross Domestic Product field. For Cook Islands, Monaco, Niue, Papua New Guinea, Saint Kitts and Nevis, San Marino, and Sao Tome and Principe this information is missing in one year; in the case of Eritrea, Iraq, and Libya there are 4 misses per each country; South Sudan and Syrian Arab Republic have 8 misses each and 26 other countries (including UK) do not have any information at all. As a result, for this variable we will be using the data table from Global Health Data Exchange (GHDx) database \cite{GHDx}.
+Almost the same can be said also about the GDP field. The Cook Islands, Monaco, Niue, Papua New Guinea, Saint Kitts and Nevis, San Marino, and Sao Tome and Principe was missing values in one year. Eritrea, Iraq, and Libya were missing four values per each country. South Sudan and Syrian Arab Republic were missing eight values and 26 other countries (including UK) did not have any information at all. As a result, the data table from Global Health Data Exchange (GHDx) database \cite{GHDx} was selected for use for all countries for consistency.
 
-As you can see from table \ref{tab:missing}, in addition to Population and GDP columns, there are also missing values in some other columns, but not a lot. Since data cleaning is not the main part of our project, we decided to simply drop the corresponding rows (only 26 rows were removed) and proceed to the next step.
+As shown in table \ref{tab:missing}, there were also missing values in some other fields, but not a lot. Since data cleaning was not the main part of this project, a decision was made to simply drop the 26 affected rows.
 
 
 % \subsection{Variables' Transformation}
