@@ -7,7 +7,7 @@ This section describe how the best fitting models to predict the Life.expectancy
 
 In this subsection, the methods used to complete the modeling will be introduced. Multilinear regression, stepwise regression, user-defined variable transformation, and the Variance Inflation Factors (vif) were utilized to produce models in rstudio.
 
-Multilinear regression is an extended regression of simple linear regression. It provides more functionality to support predictions of the response variable with multiple regressors. In R, the mlr function usually is used with the summary function to display the overall quality of the selected model. In the subsequent subsections, the implemention of stepwise regression, variable transformation, and vif function in the modeling process will be described.
+Multilinear regression is an extended regression of simple linear regression. It provides more functionality to support predictions of the response variable with multiple regressors. In R, the mlr function usually is used with the summary function to display the overall quality of the selected model. In the subsequent subsections, the implementation of stepwise regression, variable transformation, and vif function in the modeling process will be described.
 
 Additionally, as the first regression model with all predictors, an Adjusted R-squared: 0.8615, F-statistic: 52.08 and p-value: $< 2.2\times 10^{-16}$ was obtained by executing the r code below:
 
@@ -15,7 +15,7 @@ Additionally, as the first regression model with all predictors, an Adjusted R-s
 summary(lm(Life.expectancy ~ ., data = Dat))
 \end{verbatim}
 
-According to the R output, not all regressors are significant enough to contribute to the prediction model. Thus, in the following steps, various methods to improve the Adjusted R-squared score were attempted based on the knowledge and techniqaues learned in the STAT 5020 course.
+According to the R output, not all regressors are significant enough to contribute to the prediction model. Thus, in the following steps, various methods to improve the Adjusted R-squared score were attempted based on the knowledge and techniques learned in the STAT 5020 course.
 
 \subsection{Data Transformation}
 
@@ -105,7 +105,7 @@ To optimize the model further, use of the vif function and methods to remove out
 \label{tab:int}
 \end{table}
 
-Interactions were also a critical aspect to be considered. A sinple R function, acting like a forward stepwise function, was written to probe all possible interactions between two variables and take the combination producing the largest increase for the adjusted R2 metric. In table \ref{tab:int} the best 5 best variants are shown and it is evident that  Adult.Mortality*HIV.AIDS should be used. As a result, the final model is defined as
+Interactions were also a critical aspect to be considered. A simple R function, acting like a forward stepwise function, was written to probe all possible interactions between two variables and take the combination producing the largest increase for the adjusted R2 metric. In table \ref{tab:int} the best 5 best variants are shown and it is evident that  Adult.Mortality*HIV.AIDS should be used. As a result, the final model is defined as
 \begin{verbatim}
 final_model <- lm(Life.expectancy ~ 
    Alcohol + log_percentage.expenditure + Status + Total.expenditure 
